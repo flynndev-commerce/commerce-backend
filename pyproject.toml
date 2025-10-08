@@ -23,3 +23,35 @@ ruff = "^0.13.3"
 mypy = "^1.18.2"
 black = "^25.9.0"
 
+[tool.ruff]
+line-length = 120
+indent-width = 4
+target-version = "py313"
+fix = true
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+line-ending = "auto"
+
+[tool.ruff.lint]
+select = [
+    "E",  # pycodestyle errors
+    "W",  # pycodestyle warnings
+    "F",  # pyflakes
+    "I",  # isort
+    "C",  # flake8-comprehensions
+    "B",  # flake8-bugbear
+    "UP", # pyupgrade
+    "PL", # pylint
+]
+
+[tool.black]
+line-length = 120
+target-version = ['py313']
+
+
+[tool.mypy]
+python_version = "3.13"
+packages = ["app"]
+strict = true
