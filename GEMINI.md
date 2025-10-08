@@ -10,24 +10,38 @@
 
 -   **Python 버전 관리**: 이 프로젝트는 `asdf`를 사용하여 Python 버전을 관리합니다. 특정 버전은 `.tool-versions` 파일에 정의되어 있습니다. (`3.13.7`)
 -   **의존성 관리**: 의존성은 `Poetry`로 관리됩니다. 의존성 목록은 `pyproject.toml` 파일에 있습니다.
+-   **소스 코드**: 주요 애플리케이션 코드는 `app` 디렉토리 내에 레이어드 아키텍처를 따라 구성됩니다.
 
-## 의존성
+## 개발 규칙
 
-### 주요 의존성
-
--   `fastapi`: `^0.118.0` - API 빌드를 위해 사용합니다.
--   `dependency-injector`: `^4.48.2` - 의존성 주입을 위해 사용합니다.
-
-### 개발 의존성
-
--   `pytest`: `^8.4.2` - 테스트 실행을 위해 사용합니다.
--   `ruff`: `^0.13.3` - 린팅을 위해 사용합니다.
--   `mypy`: `^1.18.2` - 정적 타입 검사를 위해 사용합니다.
--   `black`: `^25.9.0` - 코드 포맷팅을 위해 사용합니다.
-
-## 커밋 스타일
+### 커밋 스타일
 
 이 프로젝트는 커밋 메시지에 대해 [Conventional Commits](https://www.conventionalcommits.org/ko/v1.0.0/) 명세를 따릅니다.
+
+### 코드 스타일 및 품질
+
+-   **Linter**: `ruff`
+-   **Formatter**: `black`
+-   **Type Checker**: `mypy`
+-   **Line Length**: 120자
+
+모든 코드는 다음 명령을 실행하여 검사를 통과해야 합니다:
+```bash
+poetry run ruff check app && poetry run black --check app && poetry run mypy -p app
+```
+
+### 설정 관리
+
+-   애플리케이션 설정은 `pydantic-settings`를 통해 관리됩니다.
+-   설정 파일은 `app/core/config.py`에 위치합니다.
+-   프로젝트 루트의 `.env` 파일을 통해 설정을 재정의할 수 있습니다.
+
+## 실행 방법
+
+-   **애플리케이션 실행**:
+    ```bash
+    poetry run uvicorn app.main:app --reload
+    ```
 
 ## 언어 및 스타일
 

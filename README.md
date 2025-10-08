@@ -7,6 +7,7 @@
 -   **언어**: Python 3.13.7
 -   **프레임워크**: FastAPI
 -   **의존성 주입**: dependency-injector
+-   **설정**: pydantic-settings
 -   **테스트**: Pytest
 -   **정적 분석**: Ruff, Mypy, Black
 -   **버전 관리**: asdf
@@ -19,7 +20,7 @@
 -   [asdf](https://asdf-vm.com/)
 -   [Poetry](https://python-poetry.org/)
 
-### 설치
+### 설치 및 실행
 
 1.  **저장소 클론**:
     ```bash
@@ -42,13 +43,33 @@
 4.  **서버 실행**:
     FastAPI 개발 서버를 실행합니다.
     ```bash
-    poetry run uvicorn main:app --reload
+    poetry run uvicorn app.main:app --reload
     ```
-    (참고: `main.py` 파일과 `app` 인스턴스를 생성해야 합니다.)
+    서버는 `http://127.0.0.1:8000`에서 실행됩니다.
 
-## 테스트
+## 개발
 
-프로젝트의 테스트를 실행하려면 다음 명령어를 사용하세요.
+### 설정
+
+-   애플리케이션 설정은 `pydantic-settings`를 통해 관리됩니다.
+-   프로젝트 루트에 `.env` 파일을 생성하여 설정을 재정의할 수 있습니다. (`.env.example` 파일 참고)
+
+### 코드 스타일 및 품질 검사
+
+모든 코드는 다음 명령을 실행하여 검사를 통과해야 합니다.
+
+-   **전체 검사 실행**:
+    ```bash
+    poetry run ruff check app && poetry run black --check app && poetry run mypy -p app
+    ```
+-   **자동 수정**:
+    ```bash
+    poetry run ruff check app --fix && poetry run black app
+    ```
+
+### 테스트
+
+프로젝트의 단위 테스트를 실행하려면 다음 명령어를 사용하세요.
 
 ```bash
 poetry run pytest
