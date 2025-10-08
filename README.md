@@ -6,8 +6,10 @@
 
 -   **언어**: Python 3.13.7
 -   **프레임워크**: FastAPI
+-   **데이터베이스 ORM**: SQLModel
 -   **의존성 주입**: dependency-injector
 -   **설정**: pydantic-settings
+-   **비밀번호 해싱**: passlib
 -   **테스트**: Pytest
 -   **정적 분석**: Ruff, Mypy, Black
 -   **버전 관리**: asdf
@@ -46,6 +48,28 @@
     poetry run uvicorn app.main:app --reload
     ```
     서버는 `http://127.0.0.1:8000`에서 실행됩니다.
+
+## API
+
+### 사용자 (Users)
+
+-   **사용자 생성**
+    -   `POST /api/v1/users/`
+    -   새로운 사용자를 생성합니다.
+    -   **요청 본문**:
+        ```json
+        {
+          "email": "user@example.com",
+          "password": "string",
+          "full_name": "string"
+        }
+        ```
+    -   **예시 (`curl`)**:
+        ```bash
+        curl -X POST "http://127.0.0.1:8000/api/v1/users/" \
+        -H "Content-Type: application/json" \
+        -d '{"email": "test@example.com", "password": "password123", "full_name": "Test User"}'
+        ```
 
 ## 개발
 
