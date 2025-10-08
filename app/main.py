@@ -13,7 +13,7 @@ from app.core.exception_handlers import configure_exception_handlers
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     # 시작 시 실행
-    create_db_and_tables()
+    await create_db_and_tables()
     yield
     # 종료 시 실행
 

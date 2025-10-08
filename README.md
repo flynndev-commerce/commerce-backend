@@ -6,7 +6,8 @@
 
 -   **언어**: Python 3.13.7
 -   **프레임워크**: FastAPI
--   **데이터베이스 ORM**: SQLModel
+-   **데이터베이스 ORM**: SQLModel (비동기 지원)
+-   **비동기 SQLite 드라이버**: aiosqlite
 -   **데이터 검증**: Pydantic, email-validator
 -   **의존성 주입**: dependency-injector
 -   **설정**: pydantic-settings

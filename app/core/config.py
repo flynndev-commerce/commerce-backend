@@ -9,7 +9,7 @@ class Settings(BaseSettings):
     version: str = "0.1.0"
     debug: bool = False
 
-    database_url: str = "sqlite:///:memory:"
+    database_url: str = "sqlite+aiosqlite:///:memory:"
     jwt_secret_key: str = "super-secret"
     jwt_algorithm: str = "HS256"
 

@@ -16,7 +16,7 @@ class Container(containers.DeclarativeContainer):
 
     # Core
     settings = providers.Singleton(get_settings)
-    db_session = providers.Factory(get_session)
+    db_session = providers.Resource(get_session)
 
     # Repositories
     user_repository = providers.Factory(

@@ -1,20 +1,21 @@
-from collections.abc import Iterator
+from collections.abc import AsyncIterator
 
-from sqlmodel import Session, SQLModel, create_engine
+from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
+from sqlmodel import SQLModel
+from sqlmodel.ext.asyncio.session import AsyncSession
 
 from app.core.config import get_settings
 
 settings = get_settings()
 
-# SQLite에서만 필요한 설정입니다.
-connect_args = {"check_same_thread": False}
-engine = create_engine(settings.database_url, echo=True, connect_args=connect_args)
+engine: AsyncEngine = create_async_engine(settings.database_url, echo=True)
 
 
-def create_db_and_tables() -> None:
-    SQLModel.metadata.create_all(engine)
+async def create_db_and_tables() -> None:
+    async with engine.begin() as conn:
+        await conn.run_sync(SQLModel.metadata.create_all)
 
 
-def get_session() -> Iterator[Session]:
-    with Session(engine) as session:
+async def get_session() -> AsyncIterator[AsyncSession]:
+    async with AsyncSession(engine) as session:
         yield session

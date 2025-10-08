@@ -17,13 +17,13 @@ router = APIRouter(prefix="/users", tags=["users"])
     status_code=status.HTTP_201_CREATED,
 )
 @inject
-def create_user(
+async def create_user(
     user_create: UserCreate,
     user_service: Annotated[UserService, Depends(Provide[Container.user_service])],
 ) -> BaseResponse[UserRead]:
     """
     새로운 사용자를 생성합니다.
     """
-    db_user = user_service.create_user(user_create=user_create)
+    db_user = await user_service.create_user(user_create=user_create)
     user_read = UserRead.model_validate(db_user)
     return BaseResponse(result=user_read)

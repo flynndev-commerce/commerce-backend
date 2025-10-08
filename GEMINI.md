@@ -13,7 +13,8 @@
 -   **소스 코드**: 주요 애플리케이션 코드는 `app` 디렉토리 내에 `domain`, `repositories`, `services`, `api`, `schemas` 등의 계층형 아키텍처를 따라 구성됩니다.
 -   **주요 라이브러리**:
     -   웹 프레임워크: `FastAPI`
-    -   데이터베이스 ORM: `SQLModel`
+    -   데이터베이스 ORM: `SQLModel` (비동기 지원)
+    -   비동기 SQLite 드라이버: `aiosqlite`
     -   데이터 검증: `Pydantic` (`email-validator` 포함)
     -   의존성 주입: `dependency-injector`
     -   설정 관리: `pydantic-settings`
