@@ -40,6 +40,7 @@
     -   클래스 내부에서 `__tablename__` 속성을 명시하여, 실제 데이터베이스 테이블 이름은 소문자 단수형을 유지합니다. (예: `__tablename__: ClassVar[str] = "user"`)
 -   **필드 선언 스타일**:
     -   모든 모델의 필드는 `typing.Annotated`를 사용하여 타입과 메타데이터(`Field`)를 명확하게 분리합니다. (예: `email: Annotated[str, Field(...)]`)
+    -   기본값이 있는 필드의 경우, `Field` 내부에 `default=` 키워드 인자를 사용하지 않고, 필드 선언 끝에 직접 기본값을 할당합니다. (예: `field_name: Annotated[str, Field(title="...")] = "기본값"`)
     -   모든 필드에는 `title`과 `description`을 한글로 명시하여 가독성과 문서화를 향상시킵니다.
 -   **데이터 검증**:
     -   사용자 입력값에 대한 검증(이메일 형식, 비밀번호 길이 등)은 `app/schemas` 레이어에서 `Pydantic`의 기능을 사용하여 처리합니다.
@@ -47,6 +48,11 @@
 ### API 스타일 규칙
 
 -   **엔드포인트 경로**: 모든 API 엔드포인트 경로는 후행 슬래시(`/`)로 끝나지 않도록 작성합니다. (예: `router.post("")`)
+
+### API 예외 처리
+
+-   **전역 예외 처리**: 모든 API 엔드포인트의 예외 처리는 `app/main.py`에 정의된 전역 예외 핸들러를 통해 `BaseResponse` 포맷으로 통일하여 반환합니다.
+-   `HTTPException`과 일반 `Exception`을 구분하여 처리하며, `mypy` 호환성을 위해 `typing.cast`를 사용할 수 있습니다.
 
 ### 코드 스타일 및 품질
 
@@ -68,7 +74,9 @@ poetry run ruff check app && poetry run black --check app && poetry run mypy -p 
 -   **`ruff: B008`**: FastAPI 의존성 주입 시에는 `Annotated` 타입을 사용하여 이 규칙을 준수합니다. (예: `Annotated[UserService, Depends(...)]`)
 -   **`ruff: UP035`**: 클래스 자신을 타입 힌트로 사용할 때는 `typing_extensions.Self`를 사용합니다.
 -   **`ruff: UP045`**: `typing.List` 대신 내장 타입 `list`를 사용합니다.
--   **`ruff: W292`**: 모든 파일의 끝에는 개행 문자가 있어야 합니다.
+-   **`ruff: UP007`**: `typing.Optional[X]` 대신 `X | None` 문법을 사용합니다. (Python 3.10+)
+-   **`PEP 695`**: 제네릭 타입 선언 시 `class MyClass[T]:`와 같은 새로운 문법을 사용합니다. (Python 3.12+)
+-   **`W292`**: 모든 파일의 끝에는 개행 문자가 있어야 합니다.
 
 ### 설정 관리
 
