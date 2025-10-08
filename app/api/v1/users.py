@@ -5,7 +5,8 @@ from dependency_injector.wiring import Provide, inject
 from fastapi import APIRouter, Depends, status
 
 from app.containers import Container
-from app.domain.user import User, UserCreate, UserRead
+from app.domain.user import User
+from app.schemas.user import UserCreate, UserRead
 from app.services.user_service import UserService
 
 router = APIRouter(prefix="/users", tags=["users"])

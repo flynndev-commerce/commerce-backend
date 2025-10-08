@@ -1,7 +1,8 @@
 
 from sqlmodel import Session, select
 
-from app.domain.user import User, UserCreate
+from app.domain.user import User
+from app.schemas.user import UserCreate
 
 
 class UserRepository:

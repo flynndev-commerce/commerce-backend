@@ -1,11 +1,9 @@
-
+import bcrypt
 from fastapi import HTTPException, status
-from passlib.context import CryptContext
 
-from app.domain.user import User, UserCreate
+from app.domain.user import User
 from app.repositories.user_repository import UserRepository
-
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+from app.schemas.user import UserCreate
 
 
 class UserService:
@@ -20,5 +18,14 @@ class UserService:
                 detail="Email already registered",
             )
 
-        hashed_password = pwd_context.hash(user_create.password)
-        return self.user_repository.create(user_create=user_create, hashed_password=hashed_password)
+        hashed_password = bcrypt.hashpw(
+            user_create.password.encode("utf-8"), bcrypt.gensalt()
+        )
+        return self.user_repository.create(
+            user_create=user_create, hashed_password=hashed_password.decode("utf-8")
+        )
+
+    def verify_password(self, plain_password: str, hashed_password: str) -> bool:
+        return bcrypt.checkpw(
+            plain_password.encode("utf-8"), hashed_password.encode("utf-8")
+        )
