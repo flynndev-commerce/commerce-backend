@@ -13,6 +13,7 @@ dependencies = [
     "pydantic-settings (>=2.11.0,<3.0.0)",
     "sqlmodel (>=0.0.25,<0.0.26)",
     "bcrypt (>=5.0.0,<6.0.0)",
+    "email-validator (>=2.3.0,<3.0.0)",
 ]
 
 
