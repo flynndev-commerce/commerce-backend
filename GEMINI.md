@@ -10,13 +10,14 @@
 
 -   **Python 버전 관리**: 이 프로젝트는 `asdf`를 사용하여 Python 버전을 관리합니다. 특정 버전은 `.tool-versions` 파일에 정의되어 있습니다. (`3.13.7`)
 -   **의존성 관리**: 의존성은 `Poetry`로 관리됩니다. 의존성 목록은 `pyproject.toml` 파일에 있습니다.
--   **소스 코드**: 주요 애플리케이션 코드는 `app` 디렉토리 내에 `domain`, `repositories`, `services`, `api` 등의 계층형 아키텍처를 따라 구성됩니다.
+-   **소스 코드**: 주요 애플리케이션 코드는 `app` 디렉토리 내에 `domain`, `repositories`, `services`, `api`, `schemas` 등의 계층형 아키텍처를 따라 구성됩니다.
 -   **주요 라이브러리**:
     -   웹 프레임워크: `FastAPI`
     -   데이터베이스 ORM: `SQLModel`
+    -   데이터 검증: `Pydantic` (`email-validator` 포함)
     -   의존성 주입: `dependency-injector`
     -   설정 관리: `pydantic-settings`
-    -   비밀번호 해싱: `passlib`
+    -   비밀번호 해싱: `bcrypt`
 
 ## 개발 규칙
 
@@ -27,6 +28,17 @@
 ### 커밋 스타일
 
 -   이 프로젝트는 커밋 메시지에 대해 [Conventional Commits](https://www.conventionalcommits.org/ko/v1.0.0/) 명세를 따릅니다.
+
+### 모델링 규칙
+
+-   **Domain vs. Schema 분리**:
+    -   `app/domain`: 데이터베이스 테이블 구조와 일대일로 매칭되는 핵심 모델을 정의합니다. 이 모델은 모든 필드를 명시적으로 포함하여, 해당 파일만으로 모델의 전체 구조를 파악할 수 있어야 합니다.
+    -   `app/schemas`: API의 요청(Request) 및 응답(Response) 데이터 전송 객체(DTO)를 정의합니다. `pydantic.BaseModel`을 상속받아 데이터베이스 기술로부터 독립성을 유지합니다.
+-   **필드 선언 스타일**:
+    -   모든 모델의 필드는 `typing.Annotated`를 사용하여 타입과 메타데이터(`Field`)를 명확하게 분리합니다. (예: `email: Annotated[str, Field(...)]`)
+    -   모든 필드에는 `title`과 `description`을 한글로 명시하여 가독성과 문서화를 향상시킵니다.
+-   **데이터 검증**:
+    -   사용자 입력값에 대한 검증(이메일 형식, 비밀번호 길이 등)은 `app/schemas` 레이어에서 `Pydantic`의 기능을 사용하여 처리합니다.
 
 ### 코드 스타일 및 품질
 

@@ -7,9 +7,10 @@
 -   **언어**: Python 3.13.7
 -   **프레임워크**: FastAPI
 -   **데이터베이스 ORM**: SQLModel
+-   **데이터 검증**: Pydantic, email-validator
 -   **의존성 주입**: dependency-injector
 -   **설정**: pydantic-settings
--   **비밀번호 해싱**: passlib
+-   **비밀번호 해싱**: bcrypt
 -   **테스트**: Pytest
 -   **정적 분석**: Ruff, Mypy, Black
 -   **버전 관리**: asdf
