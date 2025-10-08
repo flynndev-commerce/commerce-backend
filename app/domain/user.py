@@ -1,9 +1,11 @@
-from typing import Annotated
+from typing import Annotated, ClassVar
 
 from sqlmodel import Field, SQLModel
 
 
-class User(SQLModel, table=True):
+class UserEntity(SQLModel, table=True):
+    __tablename__: ClassVar[str] = "user"
+
     id: Annotated[
         int | None,
         Field(

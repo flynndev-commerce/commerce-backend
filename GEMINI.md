@@ -28,17 +28,25 @@
 ### 커밋 스타일
 
 -   이 프로젝트는 커밋 메시지에 대해 [Conventional Commits](https://www.conventionalcommits.org/ko/v1.0.0/) 명세를 따릅니다.
+-   **커밋 타입 지정 시 `feat`, `fix`, `refactor`의 의미를 명확히 구분하여 사용해야 합니다.** 특히, 단순 코드 리팩토링이나 내부 구조 개선은 `refactor`, 사용자에게 영향을 주는 버그 수정은 `fix`, 새로운 기능 추가는 `feat`으로 지정하는 것에 주의합니다. (사용자 피드백 2025-10-08)
 
 ### 모델링 규칙
 
 -   **Domain vs. Schema 분리**:
     -   `app/domain`: 데이터베이스 테이블 구조와 일대일로 매칭되는 핵심 모델을 정의합니다. 이 모델은 모든 필드를 명시적으로 포함하여, 해당 파일만으로 모델의 전체 구조를 파악할 수 있어야 합니다.
     -   `app/schemas`: API의 요청(Request) 및 응답(Response) 데이터 전송 객체(DTO)를 정의합니다. `pydantic.BaseModel`을 상속받아 데이터베이스 기술로부터 독립성을 유지합니다.
+-   **DB 모델 명명 규칙**:
+    -   `app/domain`의 데이터베이스 테이블 모델 클래스는 `Entity` 접미사를 사용합니다. (예: `UserEntity`)
+    -   클래스 내부에서 `__tablename__` 속성을 명시하여, 실제 데이터베이스 테이블 이름은 소문자 단수형을 유지합니다. (예: `__tablename__: ClassVar[str] = "user"`)
 -   **필드 선언 스타일**:
     -   모든 모델의 필드는 `typing.Annotated`를 사용하여 타입과 메타데이터(`Field`)를 명확하게 분리합니다. (예: `email: Annotated[str, Field(...)]`)
     -   모든 필드에는 `title`과 `description`을 한글로 명시하여 가독성과 문서화를 향상시킵니다.
 -   **데이터 검증**:
     -   사용자 입력값에 대한 검증(이메일 형식, 비밀번호 길이 등)은 `app/schemas` 레이어에서 `Pydantic`의 기능을 사용하여 처리합니다.
+
+### API 스타일 규칙
+
+-   **엔드포인트 경로**: 모든 API 엔드포인트 경로는 후행 슬래시(`/`)로 끝나지 않도록 작성합니다. (예: `router.post("")`)
 
 ### 코드 스타일 및 품질
 

@@ -1,4 +1,3 @@
-
 from collections.abc import Iterator
 
 from sqlmodel import Session, SQLModel, create_engine
@@ -19,4 +18,3 @@ def create_db_and_tables() -> None:
 def get_session() -> Iterator[Session]:
     with Session(engine) as session:
         yield session
-

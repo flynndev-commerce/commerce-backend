@@ -16,15 +16,11 @@ class UserBase(BaseModel):
 class UserCreate(UserBase):
     password: Annotated[
         str,
-        Field(
-            min_length=8, title="비밀번호", description="사용자 비밀번호 (8자 이상)"
-        ),
+        Field(min_length=8, title="비밀번호", description="사용자 비밀번호 (8자 이상)"),
     ]
 
 
 # 사용자 정보 조회를 위한 스키마 (API 응답용)
 class UserRead(UserBase):
     id: Annotated[int, Field(title="고유 ID", description="사용자의 고유 식별자")]
-    is_active: Annotated[
-        bool, Field(title="활성 상태", description="사용자 계정의 활성화 여부")
-    ]
+    is_active: Annotated[bool, Field(title="활성 상태", description="사용자 계정의 활성화 여부")]
