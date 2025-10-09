@@ -45,6 +45,8 @@
     -   모든 필드에는 `title`과 `description`을 한글로 명시하여 가독성과 문서화를 향상시킵니다.
 -   **데이터 검증**:
     -   사용자 입력값에 대한 검증(이메일 형식, 비밀번호 길이 등)은 `app/schemas` 레이어에서 `Pydantic`의 기능을 사용하여 처리합니다.
+-   **API 필드 명명 규칙 (카멜케이스)**:
+    -   모든 API 요청(Request) 및 응답(Response) 필드는 카멜케이스(camelCase)를 사용합니다. 이를 위해 `app/schemas/base.py`에 정의된 `CamelCaseBaseModel`을 상속받아 Pydantic의 `model_config`를 통해 자동 변환을 처리합니다. 데이터베이스 모델(`app/domain`)은 스네이크 케이스(snake_case)를 유지합니다.
 
 ### API 스타일 규칙
 
