@@ -25,7 +25,7 @@ async def create_user(
     새로운 사용자를 생성합니다.
     """
     db_user = await user_service.create_user(user_create=user_create)
-    user_read = UserRead.model_validate(db_user)
+    user_read = UserRead.model_validate(db_user, from_attributes=True)
     return BaseResponse(result=user_read)
 
 

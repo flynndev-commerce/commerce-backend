@@ -1,10 +1,12 @@
 from typing import Annotated
 
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import EmailStr, Field
+
+from app.schemas.base import CamelCaseBaseModel
 
 
 # 사용자 스키마의 공통 기본 속성
-class UserBase(BaseModel):
+class UserBase(CamelCaseBaseModel):
     email: Annotated[EmailStr, Field(title="이메일", description="사용자 이메일 주소")]
     full_name: Annotated[
         str | None,
@@ -27,6 +29,6 @@ class UserRead(UserBase):
 
 
 # 사용자 로그인을 위한 스키마
-class UserLogin(BaseModel):
+class UserLogin(CamelCaseBaseModel):
     email: Annotated[EmailStr, Field(title="이메일", description="사용자 이메일 주소")]
     password: Annotated[str, Field(title="비밀번호", description="사용자 비밀번호")]

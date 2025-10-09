@@ -1,9 +1,11 @@
 from typing import Annotated
 
-from pydantic import BaseModel, Field
+from pydantic import Field
+
+from app.schemas.base import CamelCaseBaseModel
 
 
-class BaseResponse[T](BaseModel):
+class BaseResponse[T](CamelCaseBaseModel):
     code: Annotated[
         str,
         Field(title="응답 코드", description="API 처리 상태를 나타내는 코드"),
@@ -15,6 +17,6 @@ class BaseResponse[T](BaseModel):
     result: T
 
 
-class Token(BaseModel):
+class Token(CamelCaseBaseModel):
     access_token: Annotated[str, Field(title="액세스 토큰", description="인증에 사용되는 JWT 토큰")]
     token_type: Annotated[str, Field(title="토큰 타입", description="토큰의 타입 (예: Bearer)")] = "bearer"
