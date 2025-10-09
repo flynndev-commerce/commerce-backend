@@ -63,3 +63,10 @@ target-version = ['py313']
 python_version = "3.13"
 packages = ["app"]
 strict = true
+
+[tool.pyright]
+typeCheckingMode = "basic"
+venv = ".venv"
+reportMissingImports = true
+reportUnusedImport = true
+reportUnusedVariable = true
