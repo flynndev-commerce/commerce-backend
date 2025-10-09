@@ -24,3 +24,9 @@ class UserCreate(UserBase):
 class UserRead(UserBase):
     id: Annotated[int, Field(title="고유 ID", description="사용자의 고유 식별자")]
     is_active: Annotated[bool, Field(title="활성 상태", description="사용자 계정의 활성화 여부")]
+
+
+# 사용자 로그인을 위한 스키마
+class UserLogin(BaseModel):
+    email: Annotated[EmailStr, Field(title="이메일", description="사용자 이메일 주소")]
+    password: Annotated[str, Field(title="비밀번호", description="사용자 비밀번호")]
