@@ -60,20 +60,20 @@
 -   **사용자 생성**
     -   `POST /api/v1/users/`
     -   새로운 사용자를 생성합니다.
-    -   **요청 본문**:
-        ```json
-        {
-          "email": "user@example.com",
-          "password": "string",
-          "full_name": "string"
-        }
-        ```
-    -   **예시 (`curl`)**:
-        ```bash
-        curl -X POST "http://127.0.0.1:8000/api/v1/users/" \
-        -H "Content-Type: application/json" \
-        -d '{"email": "test@example.com", "password": "password123", "full_name": "Test User"}'
-        ```
+        - **요청 본문**:
+            ```json
+            {
+              "email": "user@example.com",
+              "password": "string",
+              "fullName": "string"
+            }
+            ```
+        -   **예시 (`curl`)**:
+            ```bash
+            curl -X POST "http://127.0.0.1:8000/api/v1/users/" \
+            -H "Content-Type: application/json" \
+            -d '{"email": "test@example.com", "password": "password123", "fullName": "Test User"}'
+            ```
 
 ## 개발
 
