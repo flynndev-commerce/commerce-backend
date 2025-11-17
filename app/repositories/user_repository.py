@@ -18,4 +18,16 @@ class UserRepository:
 
     async def get_by_email(self, email: str) -> UserEntity | None:
         statement = select(UserEntity).where(UserEntity.email == email)
-        return (await self.session.exec(statement)).first()
+        result = await self.session.exec(statement)
+        return result.first()
+
+    async def get_by_id(self, user_id: int) -> UserEntity | None:
+        statement = select(UserEntity).where(UserEntity.id == user_id)
+        result = await self.session.exec(statement)
+        return result.first()
+
+    async def update(self, user: UserEntity) -> UserEntity:
+        self.session.add(user)
+        await self.session.commit()
+        await self.session.refresh(user)
+        return user

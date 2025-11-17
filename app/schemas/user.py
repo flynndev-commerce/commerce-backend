@@ -32,3 +32,15 @@ class UserRead(UserBase):
 class UserLogin(CamelCaseBaseModel):
     email: Annotated[EmailStr, Field(title="이메일", description="사용자 이메일 주소")]
     password: Annotated[str, Field(title="비밀번호", description="사용자 비밀번호")]
+
+
+# 사용자 정보 수정을 위한 스키마
+class UserUpdate(CamelCaseBaseModel):
+    full_name: Annotated[
+        str | None,
+        Field(default=None, title="전체 이름", description="사용자의 전체 이름"),
+    ]
+    password: Annotated[
+        str | None,
+        Field(default=None, min_length=8, title="비밀번호", description="새로운 비밀번호 (8자 이상)"),
+    ]

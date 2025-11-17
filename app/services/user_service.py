@@ -4,7 +4,7 @@ from app.core import security
 from app.domain.user import UserEntity
 from app.repositories.user_repository import UserRepository
 from app.schemas.token import TokenPayload
-from app.schemas.user import UserCreate
+from app.schemas.user import UserCreate, UserUpdate
 
 
 class UserService:
@@ -35,3 +35,22 @@ class UserService:
             )
         access_token = security.create_access_token(data=TokenPayload(sub=user.email))
         return access_token
+
+    async def update_user(self, user: UserEntity, user_update: UserUpdate) -> UserEntity:
+        """
+        사용자 정보를 업데이트합니다.
+
+        Args:
+            user: 업데이트할 사용자 엔티티
+            user_update: 업데이트할 정보
+
+        Returns:
+            UserEntity: 업데이트된 사용자 엔티티
+        """
+        if user_update.full_name is not None:
+            user.full_name = user_update.full_name
+
+        if user_update.password is not None:
+            user.hashed_password = security.get_password_hash(user_update.password)
+
+        return await self.user_repository.update(user)
