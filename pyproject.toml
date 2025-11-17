@@ -65,6 +65,12 @@ python_version = "3.13"
 packages = ["app"]
 strict = true
 
+[tool.pytest.ini_options]
+filterwarnings = [
+    "ignore::DeprecationWarning:starlette._exception_handler",
+    "ignore::DeprecationWarning:_pytest.python",
+]
+
 [tool.pyright]
 typeCheckingMode = "basic"
 venv = ".venv"
