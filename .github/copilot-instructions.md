@@ -51,6 +51,19 @@ app/
 ### API 규칙
 
 - **엔드포인트 경로**: 후행 슬래시(`/`) 없음 (예: `router.post("")`)
+- **라우트 이름**: `app/core/route_names.py`의 `RouteName` StrEnum 사용
+  ```python
+  # RouteName 정의
+  class RouteName(StrEnum):
+      USERS_CREATE_USER = "users:create-user"
+      USERS_LOGIN = "users:login"
+  
+  # 라우터에서 사용
+  @router.post("", name=RouteName.USERS_CREATE_USER)
+  
+  # 테스트에서 사용
+  url = test_app.url_path_for(RouteName.USERS_CREATE_USER)
+  ```
 - **응답 포맷**: 모든 API는 `BaseResponse[T]` 래핑 (`app/schemas/response.py`)
 - **예외 처리**: `HTTPException` 발생 시 전역 핸들러(`app/core/exception_handlers.py`)가 자동 처리
 - **의존성 주입**: `Annotated[Service, Depends(Provide[Container.service])]` 패턴
@@ -105,9 +118,10 @@ poetry run ruff check app --fix && poetry run black app
 2. `app/schemas/`에 DTO 생성 (`CamelCaseBaseModel` 상속)
 3. `app/repositories/`에 DB 접근 레이어 구현
 4. `app/services/`에 비즈니스 로직 구현
-5. `app/api/v1/`에 라우터 구현 (`@inject` 데코레이터)
-6. `app/containers.py`에 서비스/리포지토리 등록 및 wiring 추가
-7. 코드 검사 통과 확인
+5. `app/core/route_names.py`에 라우트 이름 추가 (StrEnum)
+6. `app/api/v1/`에 라우터 구현 (`@inject` 데코레이터, `name=RouteName.*` 설정)
+7. `app/containers.py`에 서비스/리포지토리 등록 및 wiring 추가
+8. 코드 검사 통과 확인
 
 ## 설정 관리
 
@@ -115,8 +129,73 @@ poetry run ruff check app --fix && poetry run black app
 - `.env` 파일로 재정의 가능 (pydantic-settings 사용)
 - `get_settings()` 함수로 싱글톤 접근
 
+## 테스트 작성 규칙
+
+### 테스트 구조
+
+- **테스트 파일**: `tests/v1/test_*.py` (API 버전별로 구분)
+- **Fixture**: `tests/conftest.py`에 공통 fixture 정의
+- **테스트 클래스**: 기능별로 그룹화 (예: `TestUserCreate`, `TestUserLogin`)
+
+### 테스트 베스트 프랙티스
+
+1. **URL은 RouteName 사용**:
+   ```python
+   # ✅ 올바른 예시
+   url = test_app.url_path_for(RouteName.USERS_CREATE_USER)
+   
+   # ❌ 잘못된 예시
+   url = "/api/v1/users"  # 하드코딩 금지
+   ```
+
+2. **응답은 Pydantic 모델로 검증**:
+   ```python
+   # ✅ 올바른 예시
+   response_model = BaseResponse[UserRead].model_validate(response.json())
+   assert response_model.code == "OK"
+   assert response_model.result.email == "test@example.com"
+   
+   # ❌ 잘못된 예시
+   data = response.json()
+   assert data["code"] == "OK"  # dict 직접 접근
+   ```
+
+3. **테스트 데이터는 상수화**:
+   ```python
+   TEST_USER_EMAIL = "test@example.com"
+   TEST_USER_PASSWORD = "password123"
+   TEST_USER_FULL_NAME = "Test User"
+   ```
+
+4. **헬퍼 함수로 중복 제거**:
+   ```python
+   def create_test_user(test_app: FastAPI, client: TestClient) -> UserRead:
+       """테스트용 사용자 생성 (idempotent)"""
+       # 이미 존재하면 조회, 없으면 생성
+   ```
+
+5. **Status Code는 starlette.status 상수 사용**:
+   ```python
+   assert response.status_code == status.HTTP_201_CREATED
+   assert response.status_code == status.HTTP_400_BAD_REQUEST
+   ```
+
+### 테스트 실행
+
+```bash
+# 전체 테스트
+poetry run pytest tests/ -v
+
+# 특정 파일
+poetry run pytest tests/v1/test_users.py -v
+
+# 특정 테스트
+poetry run pytest tests/v1/test_users.py::TestUserCreate::test_create_user_success -v
+```
+
 ## 특이사항
 
 - **비동기 SQLite**: `aiosqlite` 드라이버 사용, 모든 DB 작업은 `async/await`
 - **DB 초기화**: `app.main.py`의 `lifespan` 컨텍스트에서 자동 테이블 생성
 - **JWT 인증**: `app/core/security.py`에 토큰 생성/검증 유틸리티 있음
+- **테스트 DB**: 각 테스트마다 인메모리 SQLite 사용, 테스트 간 격리 보장
