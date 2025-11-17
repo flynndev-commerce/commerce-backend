@@ -4,6 +4,7 @@ from dependency_injector.wiring import Provide, inject
 from fastapi import APIRouter, Depends, status
 
 from app.containers import Container
+from app.core.route_names import RouteName
 from app.core.security import get_current_user
 from app.domain.user import UserEntity
 from app.schemas.response import BaseResponse, Token
@@ -17,6 +18,7 @@ router = APIRouter(prefix="/users", tags=["users"])
     "",
     response_model=BaseResponse[UserRead],
     status_code=status.HTTP_201_CREATED,
+    name=RouteName.USERS_CREATE_USER,
 )
 @inject
 async def create_user(
@@ -35,6 +37,7 @@ async def create_user(
     "/login",
     response_model=BaseResponse[Token],
     status_code=status.HTTP_200_OK,
+    name=RouteName.USERS_LOGIN,
 )
 @inject
 async def login_for_access_token(
@@ -52,6 +55,7 @@ async def login_for_access_token(
     "/me",
     response_model=BaseResponse[UserRead],
     status_code=status.HTTP_200_OK,
+    name=RouteName.USERS_GET_CURRENT_USER,
 )
 async def get_current_user_info(
     current_user: Annotated[UserEntity, Depends(get_current_user)],
@@ -67,6 +71,7 @@ async def get_current_user_info(
     "/me",
     response_model=BaseResponse[UserRead],
     status_code=status.HTTP_200_OK,
+    name=RouteName.USERS_UPDATE_CURRENT_USER,
 )
 @inject
 async def update_current_user_info(

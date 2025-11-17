@@ -1,6 +1,7 @@
 from collections.abc import AsyncGenerator, Generator
 
 import pytest
+from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from sqlalchemy.ext.asyncio import create_async_engine
 from sqlmodel import SQLModel
@@ -11,7 +12,15 @@ from app.main import app
 
 
 @pytest.fixture(scope="function")
-def client() -> Generator[TestClient]:
+def test_app() -> FastAPI:
+    """
+    테스트용 FastAPI 앱 인스턴스를 반환합니다.
+    """
+    return app
+
+
+@pytest.fixture(scope="function")
+def client(test_app: FastAPI) -> Generator[TestClient]:
     """
     테스트용 FastAPI 클라이언트를 생성합니다.
     각 테스트마다 새로운 인메모리 데이터베이스를 사용합니다.
@@ -28,9 +37,9 @@ def client() -> Generator[TestClient]:
         async with AsyncSession(test_engine) as session:
             yield session
 
-    app.dependency_overrides[get_session] = override_get_session
+    test_app.dependency_overrides[get_session] = override_get_session
 
-    with TestClient(app) as test_client:
+    with TestClient(test_app) as test_client:
         yield test_client
 
-    app.dependency_overrides.clear()
+    test_app.dependency_overrides.clear()
