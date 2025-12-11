@@ -17,6 +17,7 @@ router = APIRouter(prefix="/users", tags=["users"])
 
 @router.post(
     "",
+    summary="신규 사용자 생성",
     response_model=BaseResponse[UserRead],
     status_code=status.HTTP_201_CREATED,
     name=RouteName.USERS_CREATE_USER,
@@ -35,6 +36,7 @@ async def create_user(
 
 @router.post(
     "/login",
+    summary="사용자 로그인 (토큰 발급)",
     response_model=BaseResponse[Token],
     status_code=status.HTTP_200_OK,
     name=RouteName.USERS_LOGIN,
@@ -53,6 +55,7 @@ async def login_for_access_token(
 
 @router.get(
     "/me",
+    summary="현재 사용자 정보 조회",
     response_model=BaseResponse[UserRead],
     status_code=status.HTTP_200_OK,
     name=RouteName.USERS_GET_CURRENT_USER,
@@ -69,6 +72,7 @@ async def get_current_user_info(
 
 @router.patch(
     "/me",
+    summary="현재 사용자 정보 수정",
     response_model=BaseResponse[UserRead],
     status_code=status.HTTP_200_OK,
     name=RouteName.USERS_UPDATE_CURRENT_USER,

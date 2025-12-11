@@ -18,6 +18,7 @@ router = APIRouter(prefix="/products", tags=["products"])
 
 @router.post(
     "",
+    summary="신규 상품 생성",
     response_model=BaseResponse[ProductRead],
     status_code=status.HTTP_201_CREATED,
     name=RouteName.PRODUCTS_CREATE,
@@ -37,6 +38,7 @@ async def create_product(
 
 @router.get(
     "",
+    summary="상품 목록 조회",
     response_model=BaseResponse[list[ProductRead]],
     name=RouteName.PRODUCTS_LIST,
 )
@@ -54,6 +56,7 @@ async def list_products(
 
 @router.get(
     "/{product_id}",
+    summary="단일 상품 조회",
     response_model=BaseResponse[ProductRead],
     name=RouteName.PRODUCTS_GET,
 )
@@ -70,6 +73,7 @@ async def get_product(
 
 @router.patch(
     "/{product_id}",
+    summary="상품 정보 수정",
     response_model=BaseResponse[ProductRead],
     name=RouteName.PRODUCTS_UPDATE,
 )
