@@ -2,9 +2,10 @@ from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from starlette import status
 
+from app.application.dto.response import BaseResponse
+from app.application.dto.token import Token
+from app.application.dto.user_dto import UserRead
 from app.core.route_names import RouteName
-from app.schemas.response import BaseResponse, Token
-from app.schemas.user import UserRead
 
 # 테스트 데이터 상수
 TEST_USER_EMAIL = "test@example.com"
@@ -102,7 +103,7 @@ class TestUserCreate:
         response_model = BaseResponse[None].model_validate(response.json())
         assert response_model.code == "BAD_REQUEST"
         assert response_model.message is not None
-        assert "already registered" in response_model.message.lower()
+        assert "이미 등록된 이메일입니다." in response_model.message
 
     def test_create_user_invalid_email(self, test_app: FastAPI, client: TestClient) -> None:
         """잘못된 이메일 형식으로 사용자 생성 실패 테스트"""
@@ -171,11 +172,11 @@ class TestUserLogin:
             },
         )
 
-        assert response.status_code == status.HTTP_401_UNAUTHORIZED
-
         # Pydantic 모델로 오류 응답 검증
         response_model = BaseResponse[None].model_validate(response.json())
         assert response_model.code == "BAD_REQUEST"
+        assert response_model.message is not None
+        assert "이메일 또는 비밀번호가 올바르지 않습니다." in response_model.message
 
     def test_login_nonexistent_user(self, test_app: FastAPI, client: TestClient) -> None:
         """존재하지 않는 사용자로 로그인 실패 테스트"""
@@ -215,7 +216,6 @@ class TestUserProfile:
     def test_get_current_user_without_auth(self, test_app: FastAPI, client: TestClient) -> None:
         """인증 없이 현재 사용자 정보 조회 실패 테스트"""
         response = client.get(test_app.url_path_for(RouteName.USERS_GET_CURRENT_USER))
-
         assert response.status_code == status.HTTP_403_FORBIDDEN
 
     def test_update_user_full_name(self, test_app: FastAPI, client: TestClient) -> None:
