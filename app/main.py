@@ -3,11 +3,11 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 
-from app.api.routes import configure_routers
 from app.containers import Container
 from app.core.config import get_settings
 from app.core.db import create_db_and_tables
 from app.core.exception_handlers import configure_exception_handlers
+from app.infrastructure.api.routes import configure_routers
 
 
 @asynccontextmanager

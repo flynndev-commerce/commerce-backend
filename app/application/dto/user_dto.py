@@ -2,7 +2,7 @@ from typing import Annotated
 
 from pydantic import EmailStr, Field
 
-from app.schemas.base import CamelCaseBaseModel
+from app.application.dto.base import CamelCaseBaseModel
 
 
 # 사용자 스키마의 공통 기본 속성

@@ -7,17 +7,13 @@ from dependency_injector.wiring import Provide, inject
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
+from app.application.dto.token import TokenPayload
 from app.core.config import get_settings
-from app.domain.user import UserEntity
-from app.repositories.user_repository import UserRepository
-from app.schemas.token import TokenPayload
+from app.domain.model.user import User
+from app.domain.ports.user_repository import IUserRepository
 
 settings = get_settings()
 security_scheme = HTTPBearer()
-
-
-def verify_password(plain_password: str, hashed_password: str) -> bool:
-    return bcrypt.checkpw(plain_password.encode("utf-8"), hashed_password.encode("utf-8"))
 
 
 def get_password_hash(password: str) -> str:
@@ -68,8 +64,8 @@ def decode_access_token(token: str) -> TokenPayload:
 @inject
 async def get_current_user(
     credentials: Annotated[HTTPAuthorizationCredentials, Depends(security_scheme)],
-    user_repository: Annotated[UserRepository, Depends(Provide["user_repository"])],
-) -> UserEntity:
+    user_repository: Annotated[IUserRepository, Depends(Provide["user_repository"])],
+) -> User:
     """
     현재 인증된 사용자를 반환합니다.
 
@@ -78,7 +74,7 @@ async def get_current_user(
         user_repository: 사용자 리포지토리 (DI 컨테이너를 통해 주입)
 
     Returns:
-        UserEntity: 현재 인증된 사용자
+        User: 현재 인증된 사용자
 
     Raises:
         HTTPException: 인증에 실패한 경우
