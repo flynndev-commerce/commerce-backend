@@ -24,12 +24,12 @@ router = APIRouter(prefix="/users", tags=["users"])
 @inject
 async def create_user(
     user_create: UserCreate,
-    user_service: Annotated[UserUseCase, Depends(Provide[Container.user_service])],
+    user_use_case: Annotated[UserUseCase, Depends(Provide[Container.user_use_case])],
 ) -> BaseResponse[UserRead]:
     """
     새로운 사용자를 생성합니다.
     """
-    created_user = await user_service.create_user(user_create=user_create)
+    created_user = await user_use_case.create_user(user_create=user_create)
     return BaseResponse(result=created_user)
 
 
@@ -42,12 +42,12 @@ async def create_user(
 @inject
 async def login_for_access_token(
     user_login: UserLogin,
-    user_service: Annotated[UserUseCase, Depends(Provide[Container.user_service])],
+    user_use_case: Annotated[UserUseCase, Depends(Provide[Container.user_use_case])],
 ) -> BaseResponse[Token]:
     """
     사용자 로그인을 처리하고 액세스 토큰을 반환합니다.
     """
-    access_token = await user_service.login_user(user_login.email, user_login.password)
+    access_token = await user_use_case.login_user(user_login.email, user_login.password)
     return BaseResponse(result=Token(access_token=access_token))
 
 
@@ -77,7 +77,7 @@ async def get_current_user_info(
 async def update_current_user_info(
     user_update: UserUpdate,
     current_user: Annotated[User, Depends(get_current_user)],
-    user_service: Annotated[UserUseCase, Depends(Provide[Container.user_service])],
+    user_use_case: Annotated[UserUseCase, Depends(Provide[Container.user_use_case])],
 ) -> BaseResponse[UserRead]:
     """
     현재 인증된 사용자의 정보를 수정합니다.
@@ -85,5 +85,5 @@ async def update_current_user_info(
     if current_user.id is None:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid user ID")
 
-    updated_user = await user_service.update_user(current_user.id, user_update)
+    updated_user = await user_use_case.update_user(current_user.id, user_update)
     return BaseResponse(result=updated_user)
