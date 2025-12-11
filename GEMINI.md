@@ -10,7 +10,11 @@
 
 -   **Python 버전 관리**: 이 프로젝트는 `asdf`를 사용하여 Python 버전을 관리합니다. 특정 버전은 `.tool-versions` 파일에 정의되어 있습니다. (`3.13.7`)
 -   **의존성 관리**: 의존성은 `Poetry`로 관리됩니다. 의존성 목록은 `pyproject.toml` 파일에 있습니다.
--   **소스 코드**: 주요 애플리케이션 코드는 `app` 디렉토리 내에 `domain`, `repositories`, `services`, `api`, `schemas` 등의 계층형 아키텍처를 따라 구성됩니다.
+-   **소스 코드**: 주요 애플리케이션 코드는 `app` 디렉토리 내에 DDD(도메인 주도 설계)와 헥사고날 아키텍처를 따라 구성됩니다.
+    -   `app/domain`: 애플리케이션의 핵심 비즈니스 로직과 규칙을 포함하며, 다른 계층에 대한 의존성이 없는 순수한 도메인 모델, 서비스, 포트(인터페이스)를 정의합니다.
+    -   `app/application`: 애플리케이션의 사용 사례(Use Cases)를 구현합니다. `domain` 계층의 포트를 사용하여 비즈니스 로직을 오케스트레이션하고, `infrastructure` 계층의 구현에 의존하지 않습니다. API 요청/응답을 위한 DTO(데이터 전송 객체)도 이 계층에서 정의합니다.
+    -   `app/infrastructure`: 외부 세계와의 통신을 담당하는 어댑터들을 포함합니다. 예를 들어, FastAPI를 사용한 웹 API(Driving Adapter), SQLModel을 사용한 데이터베이스 연동(Driven Adapter) 등이 이 계층에 속합니다. `domain`에 정의된 포트의 구체적인 구현을 제공합니다.
+    -   `app/core`: 로깅, 설정, 의존성 주입 컨테이너 등 프로젝트 전반에 걸쳐 사용되는 핵심 유틸리티 및 기반 코드를 포함합니다.
 -   **주요 라이브러리**:
     -   웹 프레임워크: `FastAPI`
     -   데이터베이스 ORM: `SQLModel` (비동기 지원)
@@ -33,20 +37,22 @@
 
 ### 모델링 규칙
 
--   **Domain vs. Schema 분리**:
-    -   `app/domain`: 데이터베이스 테이블 구조와 일대일로 매칭되는 핵심 모델을 정의합니다. 이 모델은 모든 필드를 명시적으로 포함하여, 해당 파일만으로 모델의 전체 구조를 파악할 수 있어야 합니다.
-    -   `app/schemas`: API의 요청(Request) 및 응답(Response) 데이터 전송 객체(DTO)를 정의합니다. `pydantic.BaseModel`을 상속받아 데이터베이스 기술로부터 독립성을 유지합니다.
+-   **헥사고날 아키텍처 기반 모델링 규칙**:
+    -   **계층별 모델 분리**:
+        -   `app/domain/model`: 순수한 비즈니스 도메인을 표현하는 핵심 모델입니다. 데이터베이스나 외부 기술에 대한 어떠한 의존성도 갖지 않아야 합니다. 비즈니스 로직은 이 모델 내에 메서드로 포함됩니다.
+        -   `app/application/dto`: 애플리케이션 서비스(Use Case)의 입력 및 출력을 위한 데이터 전송 객체(DTO)를 정의합니다. Pydantic의 `BaseModel`을 상속하여 데이터 유효성 검사를 수행하며 API의 Request/Response 스키마로 사용됩니다.
+        -   `app/infrastructure/persistence/model`: 데이터베이스 테이블 구조와 매핑되는 영속성 모델을 정의합니다. `SQLModel`을 상속받으며, 테이블 이름, 컬럼 정보 등 데이터베이스에 특화된 설정을 포함합니다.
 -   **DB 모델 명명 규칙**:
-    -   `app/domain`의 데이터베이스 테이블 모델 클래스는 `Entity` 접미사를 사용합니다. (예: `UserEntity`)
+    -   `app/infrastructure/persistence/model`의 데이터베이스 테이블 모델 클래스는 `Entity` 접미사를 사용합니다. (예: `UserEntity`)
     -   클래스 내부에서 `__tablename__` 속성을 명시하여, 실제 데이터베이스 테이블 이름은 소문자 단수형을 유지합니다. (예: `__tablename__: ClassVar[str] = "user"`)
 -   **필드 선언 스타일**:
     -   모든 모델의 필드는 `typing.Annotated`를 사용하여 타입과 메타데이터(`Field`)를 명확하게 분리합니다. (예: `email: Annotated[str, Field(...)]`)
     -   기본값이 있는 필드의 경우, `Field` 내부에 `default=` 키워드 인자를 사용하지 않고, 필드 선언 끝에 직접 기본값을 할당합니다. (예: `field_name: Annotated[str, Field(title="...")] = "기본값"`)
     -   모든 필드에는 `title`과 `description`을 한글로 명시하여 가독성과 문서화를 향상시킵니다.
 -   **데이터 검증**:
-    -   사용자 입력값에 대한 검증(이메일 형식, 비밀번호 길이 등)은 `app/schemas` 레이어에서 `Pydantic`의 기능을 사용하여 처리합니다.
+    -   사용자 입력값에 대한 검증(이메일 형식, 비밀번호 길이 등)은 `app/application/dto` 레이어에서 `Pydantic`의 기능을 사용하여 처리합니다.
 -   **API 필드 명명 규칙 (카멜케이스)**:
-    -   모든 API 요청(Request) 및 응답(Response) 필드는 카멜케이스(camelCase)를 사용합니다. 이를 위해 `app/schemas/base.py`에 정의된 `CamelCaseBaseModel`을 상속받아 Pydantic의 `model_config`를 통해 자동 변환을 처리합니다. 데이터베이스 모델(`app/domain`)은 스네이크 케이스(snake_case)를 유지합니다.
+    -   모든 API 요청(Request) 및 응답(Response) DTO 필드는 카멜케이스(camelCase)를 사용합니다. 이를 위해 `pydantic.BaseModel`을 상속받는 기본 DTO 모델에 `model_config`를 통해 자동 변환을 처리합니다. 도메인 및 영속성 모델은 스네이크 케이스(snake_case)를 유지합니다.
 
 ### API 스타일 규칙
 
