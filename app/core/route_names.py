@@ -22,3 +22,4 @@ class RouteName(StrEnum):
     ORDERS_CREATE = "orders:create-order"
     ORDERS_LIST = "orders:list-orders"
     ORDERS_GET = "orders:get-order"
+    ORDERS_CANCEL = "orders:cancel-order"

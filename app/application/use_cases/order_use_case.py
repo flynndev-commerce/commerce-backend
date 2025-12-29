@@ -1,7 +1,7 @@
 from fastapi import HTTPException, status
 
 from app.application.dto.order_dto import OrderCreate, OrderRead
-from app.domain.model.order import Order, OrderItem
+from app.domain.model.order import Order, OrderItem, OrderStatus
 from app.domain.ports.order_repository import IOrderRepository
 from app.domain.ports.product_repository import IProductRepository
 
@@ -92,3 +92,43 @@ class OrderUseCase:
             )
 
         return OrderRead.model_validate(order)
+
+    async def cancel_order(self, user_id: int, order_id: int) -> OrderRead:
+        """
+        주문을 취소합니다.
+        1. 주문 조회 및 권한 확인
+        2. 주문 상태 확인 (PENDING, PAID만 취소 가능)
+        3. 재고 복구
+        4. 주문 상태 변경 및 저장
+        """
+        order = await self.order_repository.find_by_id(order_id)
+        if not order:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="주문을 찾을 수 없습니다.",
+            )
+
+        if order.user_id != user_id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="해당 주문에 대한 권한이 없습니다.",
+            )
+
+        if order.status not in [OrderStatus.PENDING, OrderStatus.PAID]:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="이미 배송이 시작되었거나 취소된 주문은 취소할 수 없습니다.",
+            )
+
+        # 재고 복구
+        for item in order.items:
+            product = await self.product_repository.get_by_id(item.product_id)
+            if product:
+                product.stock += item.quantity
+                await self.product_repository.update(product)
+
+        # 상태 변경
+        order.status = OrderStatus.CANCELLED
+        updated_order = await self.order_repository.save(order)
+
+        return OrderRead.model_validate(updated_order)

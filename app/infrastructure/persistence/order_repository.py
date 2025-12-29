@@ -36,7 +36,11 @@ class SQLOrderRepository(IOrderRepository):
         ]
         order_entity.items = order_item_entities
 
-        self.session.add(order_entity)
+        if order.id:
+            order_entity = await self.session.merge(order_entity)
+        else:
+            self.session.add(order_entity)
+
         await self.session.commit()
         await self.session.refresh(order_entity)
 

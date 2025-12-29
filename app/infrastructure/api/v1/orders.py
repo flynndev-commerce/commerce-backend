@@ -72,3 +72,22 @@ async def get_order(
         order_id=order_id,
     )
     return BaseResponse(result=order)
+
+
+@router.post(
+    "/{order_id}/cancel",
+    summary="주문 취소",
+    response_model=BaseResponse[OrderRead],
+    name=RouteName.ORDERS_CANCEL,
+)
+@inject
+async def cancel_order(
+    order_id: int,
+    current_user: Annotated[UserRead, Depends(get_current_user)],
+    order_use_case: Annotated[OrderUseCase, Depends(Provide[Container.order_use_case])],
+) -> BaseResponse[OrderRead]:
+    cancelled_order = await order_use_case.cancel_order(
+        user_id=current_user.id,
+        order_id=order_id,
+    )
+    return BaseResponse(result=cancelled_order)
