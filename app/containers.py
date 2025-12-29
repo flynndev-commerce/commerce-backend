@@ -7,6 +7,7 @@ from app.core.config import get_settings
 from app.core.db import get_session
 from app.infrastructure.persistence.order_repository import SQLOrderRepository
 from app.infrastructure.persistence.product_repository import SQLProductRepository
+from app.infrastructure.persistence.unit_of_work import SQLAlchemyUnitOfWork
 from app.infrastructure.persistence.user_repository import SQLUserRepository
 
 
@@ -39,17 +40,26 @@ class Container(containers.DeclarativeContainer):
         session=db_session,
     )
 
+    # Unit of Work
+    uow = providers.Factory(
+        SQLAlchemyUnitOfWork,
+        session=db_session,
+    )
+
     # Use Cases
     user_use_case = providers.Factory(
         UserUseCase,
         user_repository=user_repository,
+        uow=uow,
     )
     product_use_case = providers.Factory(
         ProductUseCase,
         product_repository=product_repository,
+        uow=uow,
     )
     order_use_case = providers.Factory(
         OrderUseCase,
         order_repository=order_repository,
         product_repository=product_repository,
+        uow=uow,
     )

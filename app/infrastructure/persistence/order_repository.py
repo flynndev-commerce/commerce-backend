@@ -41,7 +41,7 @@ class SQLOrderRepository(IOrderRepository):
         else:
             self.session.add(order_entity)
 
-        await self.session.commit()
+        await self.session.flush()
         await self.session.refresh(order_entity)
 
         return self._to_domain(order_entity)

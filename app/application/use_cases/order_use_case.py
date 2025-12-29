@@ -4,6 +4,7 @@ from app.application.dto.order_dto import OrderCreate, OrderRead
 from app.domain.model.order import Order, OrderItem, OrderStatus
 from app.domain.ports.order_repository import IOrderRepository
 from app.domain.ports.product_repository import IProductRepository
+from app.domain.ports.unit_of_work import IUnitOfWork
 
 
 class OrderUseCase:
@@ -13,63 +14,66 @@ class OrderUseCase:
         self,
         order_repository: IOrderRepository,
         product_repository: IProductRepository,
+        uow: IUnitOfWork,
     ):
         self.order_repository = order_repository
         self.product_repository = product_repository
+        self.uow = uow
 
     async def create_order(self, user_id: int, order_create: OrderCreate) -> OrderRead:
         """
         주문을 생성합니다.
         1. 상품 존재 여부 및 재고 확인
         2. 총 주문 금액 계산
-        3. 재고 차감 (TODO: 트랜잭션 처리 필요)
+        3. 재고 차감 (트랜잭션 처리)
         4. 주문 저장
         """
-        total_price = 0.0
-        order_items = []
+        async with self.uow:
+            total_price = 0.0
+            order_items = []
 
-        for item_create in order_create.items:
-            product = await self.product_repository.get_by_id(item_create.product_id)
-            if not product:
-                raise HTTPException(
-                    status_code=status.HTTP_404_NOT_FOUND,
-                    detail=f"상품을 찾을 수 없습니다. (ID: {item_create.product_id})",
+            for item_create in order_create.items:
+                product = await self.product_repository.get_by_id(item_create.product_id)
+                if not product:
+                    raise HTTPException(
+                        status_code=status.HTTP_404_NOT_FOUND,
+                        detail=f"상품을 찾을 수 없습니다. (ID: {item_create.product_id})",
+                    )
+
+                if product.stock < item_create.quantity:
+                    raise HTTPException(
+                        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                        detail=(
+                            f"재고가 부족합니다. (상품: {product.name}, "
+                            f"재고: {product.stock}, 요청: {item_create.quantity})"
+                        ),
+                    )
+
+                # 가격 계산 및 아이템 생성
+                item_price = product.price * item_create.quantity
+                total_price += item_price
+
+                order_items.append(
+                    OrderItem(
+                        product_id=product.id,  # type: ignore
+                        price=product.price,
+                        quantity=item_create.quantity,
+                    )
                 )
 
-            if product.stock < item_create.quantity:
-                raise HTTPException(
-                    status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                    detail=(
-                        f"재고가 부족합니다. (상품: {product.name}, "
-                        f"재고: {product.stock}, 요청: {item_create.quantity})"
-                    ),
-                )
+                # 재고 차감
+                product.stock -= item_create.quantity
+                await self.product_repository.update(product)
 
-            # 가격 계산 및 아이템 생성
-            item_price = product.price * item_create.quantity
-            total_price += item_price
-
-            order_items.append(
-                OrderItem(
-                    product_id=product.id,  # type: ignore
-                    price=product.price,
-                    quantity=item_create.quantity,
-                )
+            # 주문 생성
+            order = Order(
+                user_id=user_id,
+                total_price=total_price,
+                items=order_items,
             )
 
-            # 재고 차감
-            product.stock -= item_create.quantity
-            await self.product_repository.update(product)
-
-        # 주문 생성
-        order = Order(
-            user_id=user_id,
-            total_price=total_price,
-            items=order_items,
-        )
-
-        saved_order = await self.order_repository.save(order)
-        return OrderRead.model_validate(saved_order)
+            saved_order = await self.order_repository.save(order)
+            return OrderRead.model_validate(saved_order)
 
     async def list_orders(self, user_id: int, offset: int, limit: int) -> list[OrderRead]:
         """사용자의 주문 목록을 조회합니다."""
@@ -101,34 +105,35 @@ class OrderUseCase:
         3. 재고 복구
         4. 주문 상태 변경 및 저장
         """
-        order = await self.order_repository.find_by_id(order_id)
-        if not order:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="주문을 찾을 수 없습니다.",
-            )
+        async with self.uow:
+            order = await self.order_repository.find_by_id(order_id)
+            if not order:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail="주문을 찾을 수 없습니다.",
+                )
 
-        if order.user_id != user_id:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="해당 주문에 대한 권한이 없습니다.",
-            )
+            if order.user_id != user_id:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="해당 주문에 대한 권한이 없습니다.",
+                )
 
-        if order.status not in [OrderStatus.PENDING, OrderStatus.PAID]:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="이미 배송이 시작되었거나 취소된 주문은 취소할 수 없습니다.",
-            )
+            if order.status not in [OrderStatus.PENDING, OrderStatus.PAID]:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="이미 배송이 시작되었거나 취소된 주문은 취소할 수 없습니다.",
+                )
 
-        # 재고 복구
-        for item in order.items:
-            product = await self.product_repository.get_by_id(item.product_id)
-            if product:
-                product.stock += item.quantity
-                await self.product_repository.update(product)
+            # 재고 복구
+            for item in order.items:
+                product = await self.product_repository.get_by_id(item.product_id)
+                if product:
+                    product.stock += item.quantity
+                    await self.product_repository.update(product)
 
-        # 상태 변경
-        order.status = OrderStatus.CANCELLED
-        updated_order = await self.order_repository.save(order)
+            # 상태 변경
+            order.status = OrderStatus.CANCELLED
+            updated_order = await self.order_repository.save(order)
 
-        return OrderRead.model_validate(updated_order)
+            return OrderRead.model_validate(updated_order)

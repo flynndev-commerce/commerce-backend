@@ -15,7 +15,7 @@ class SQLUserRepository(IUserRepository):
     async def create(self, user: User) -> User:
         db_user = UserEntity.model_validate(user)
         self.session.add(db_user)
-        await self.session.commit()
+        await self.session.flush()
         await self.session.refresh(db_user)
         return User.model_validate(db_user)
 
@@ -51,6 +51,6 @@ class SQLUserRepository(IUserRepository):
             setattr(db_user, key, value)
 
         self.session.add(db_user)
-        await self.session.commit()
+        await self.session.flush()
         await self.session.refresh(db_user)
         return User.model_validate(db_user)

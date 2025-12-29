@@ -17,7 +17,7 @@ class SQLProductRepository(IProductRepository):
     async def create(self, product: Product) -> Product:
         db_product = ProductEntity.model_validate(product)
         self.session.add(db_product)
-        await self.session.commit()
+        await self.session.flush()
         await self.session.refresh(db_product)
         return Product.model_validate(db_product)
 
@@ -46,6 +46,6 @@ class SQLProductRepository(IProductRepository):
             setattr(db_product, key, value)
 
         self.session.add(db_product)
-        await self.session.commit()
+        await self.session.flush()
         await self.session.refresh(db_product)
         return Product.model_validate(db_product)
