@@ -1,9 +1,11 @@
 from dependency_injector import containers, providers
 
+from app.application.use_cases.order_use_case import OrderUseCase
 from app.application.use_cases.product_use_case import ProductUseCase
 from app.application.use_cases.user_use_case import UserUseCase
 from app.core.config import get_settings
 from app.core.db import get_session
+from app.infrastructure.persistence.order_repository import SQLOrderRepository
 from app.infrastructure.persistence.product_repository import SQLProductRepository
 from app.infrastructure.persistence.user_repository import SQLUserRepository
 
@@ -15,6 +17,7 @@ class Container(containers.DeclarativeContainer):
             "app.core.security",
             "app.infrastructure.api.v1.users",
             "app.infrastructure.api.v1.products",
+            "app.infrastructure.api.v1.orders",
         ]
     )
 
@@ -31,6 +34,10 @@ class Container(containers.DeclarativeContainer):
         SQLProductRepository,
         session=db_session,
     )
+    order_repository = providers.Factory(
+        SQLOrderRepository,
+        session=db_session,
+    )
 
     # Use Cases
     user_use_case = providers.Factory(
@@ -39,5 +46,10 @@ class Container(containers.DeclarativeContainer):
     )
     product_use_case = providers.Factory(
         ProductUseCase,
+        product_repository=product_repository,
+    )
+    order_use_case = providers.Factory(
+        OrderUseCase,
+        order_repository=order_repository,
         product_repository=product_repository,
     )
