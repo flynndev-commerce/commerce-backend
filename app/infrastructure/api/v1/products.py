@@ -26,13 +26,9 @@ router = APIRouter(prefix="/products", tags=["products"])
 @inject
 async def create_product(
     product_create: ProductCreate,
-    product_use_case: Annotated[
-        ProductUseCase, Depends(Provide[Container.product_use_case])
-    ],
+    product_use_case: Annotated[ProductUseCase, Depends(Provide[Container.product_use_case])],
 ) -> BaseResponse[ProductRead]:
-    created_product = await product_use_case.create_product(
-        product_create=product_create
-    )
+    created_product = await product_use_case.create_product(product_create=product_create)
     return BaseResponse(result=created_product)
 
 
@@ -44,9 +40,7 @@ async def create_product(
 )
 @inject
 async def list_products(
-    product_use_case: Annotated[
-        ProductUseCase, Depends(Provide[Container.product_use_case])
-    ],
+    product_use_case: Annotated[ProductUseCase, Depends(Provide[Container.product_use_case])],
     offset: Annotated[int, Query(ge=0)] = 0,
     limit: Annotated[int, Query(ge=1, le=100)] = 10,
 ) -> BaseResponse[list[ProductRead]]:
@@ -63,9 +57,7 @@ async def list_products(
 @inject
 async def get_product(
     product_id: int,
-    product_use_case: Annotated[
-        ProductUseCase, Depends(Provide[Container.product_use_case])
-    ],
+    product_use_case: Annotated[ProductUseCase, Depends(Provide[Container.product_use_case])],
 ) -> BaseResponse[ProductRead]:
     product = await product_use_case.get_product_by_id(product_id=product_id)
     return BaseResponse(result=product)
@@ -81,11 +73,7 @@ async def get_product(
 async def update_product(
     product_id: int,
     product_update: ProductUpdate,
-    product_use_case: Annotated[
-        ProductUseCase, Depends(Provide[Container.product_use_case])
-    ],
+    product_use_case: Annotated[ProductUseCase, Depends(Provide[Container.product_use_case])],
 ) -> BaseResponse[ProductRead]:
-    updated_product = await product_use_case.update_product(
-        product_id=product_id, product_update=product_update
-    )
+    updated_product = await product_use_case.update_product(product_id=product_id, product_update=product_update)
     return BaseResponse(result=updated_product)
