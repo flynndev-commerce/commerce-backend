@@ -13,6 +13,11 @@ from tests.v1.products.helpers import (
     create_test_product,
 )
 
+TEST_PRODUCT_COUNT_SMALL = 2
+TEST_PRODUCT_COUNT_TOTAL = 15
+TEST_PRODUCT_PAGE_SIZE = 10
+TEST_PRODUCT_REMAINING = 5
+
 
 class TestProductList:
     """상품 목록 조회 테스트"""
@@ -45,12 +50,12 @@ class TestProductList:
         assert response.status_code == status.HTTP_200_OK
         response_model = BaseResponse[list[ProductRead]].model_validate(response.json())
         assert response_model.code == "OK"
-        assert len(response_model.result) == 2
+        assert len(response_model.result) == TEST_PRODUCT_COUNT_SMALL
 
     def test_list_products_pagination(self, test_app: FastAPI, client: TestClient) -> None:
         """상품 목록 페이지네이션 테스트"""
         # 상품 15개 생성
-        for i in range(15):
+        for i in range(TEST_PRODUCT_COUNT_TOTAL):
             client.post(
                 test_app.url_path_for(RouteName.PRODUCTS_CREATE),
                 json={
@@ -64,9 +69,9 @@ class TestProductList:
         # 기본 페이지 (10개)
         response = client.get(test_app.url_path_for(RouteName.PRODUCTS_LIST))
         response_model = BaseResponse[list[ProductRead]].model_validate(response.json())
-        assert len(response_model.result) == 10
+        assert len(response_model.result) == TEST_PRODUCT_PAGE_SIZE
 
         # 두 번째 페이지 (5개)
         response = client.get(test_app.url_path_for(RouteName.PRODUCTS_LIST), params={"offset": 10, "limit": 10})
         response_model = BaseResponse[list[ProductRead]].model_validate(response.json())
-        assert len(response_model.result) == 5
+        assert len(response_model.result) == TEST_PRODUCT_REMAINING
