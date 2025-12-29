@@ -1,4 +1,5 @@
 from collections.abc import AsyncGenerator, Generator
+from typing import cast
 
 import pytest
 from dependency_injector import providers
@@ -9,6 +10,7 @@ from sqlmodel import SQLModel
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from app.core.db import get_session
+from app.core.types import AppWithContainer
 from app.main import app
 
 
@@ -42,11 +44,11 @@ def client(test_app: FastAPI) -> Generator[TestClient]:
 
     # DI 컨테이너 오버라이드
     if hasattr(test_app, "container"):
-        test_app.container.db_session.override(providers.Resource(override_get_session))  # type: ignore
+        cast(AppWithContainer, test_app).container.db_session.override(providers.Resource(override_get_session))
 
     with TestClient(test_app) as test_client:
         yield test_client
 
     if hasattr(test_app, "container"):
-        test_app.container.db_session.reset_override()  # type: ignore
+        cast(AppWithContainer, test_app).container.db_session.reset_override()
     test_app.dependency_overrides.clear()
