@@ -20,13 +20,14 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 
 def create_app() -> FastAPI:
     settings = get_settings()
+    container = Container()
     app = FastAPI(
         title=settings.title,
         version=settings.version,
         debug=settings.debug,
         lifespan=lifespan,
-        container=Container(),
     )
+    app.container = container  # type: ignore
 
     configure_exception_handlers(app)
     configure_routers(app)

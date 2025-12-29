@@ -1,6 +1,7 @@
 from collections.abc import AsyncGenerator, Generator
 
 import pytest
+from dependency_injector import providers
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from sqlalchemy.ext.asyncio import create_async_engine
@@ -39,7 +40,13 @@ def client(test_app: FastAPI) -> Generator[TestClient]:
 
     test_app.dependency_overrides[get_session] = override_get_session
 
+    # DI 컨테이너 오버라이드
+    if hasattr(test_app, "container"):
+        test_app.container.db_session.override(providers.Resource(override_get_session))  # type: ignore
+
     with TestClient(test_app) as test_client:
         yield test_client
 
+    if hasattr(test_app, "container"):
+        test_app.container.db_session.reset_override()  # type: ignore
     test_app.dependency_overrides.clear()

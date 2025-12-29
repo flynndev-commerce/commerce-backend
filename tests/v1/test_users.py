@@ -11,6 +11,15 @@ from app.core.route_names import RouteName
 TEST_USER_EMAIL = "test@example.com"
 TEST_USER_PASSWORD = "password123"
 TEST_USER_FULL_NAME = "Test User"
+TEST_USER_PASSWORD_ALT = "password456"
+TEST_USER_FULL_NAME_ALT = "Another User"
+TEST_USER_INVALID_EMAIL = "invalid-email"
+TEST_USER_PASSWORD_SHORT = "short"
+TEST_USER_PASSWORD_WRONG = "wrongpassword"
+TEST_USER_EMAIL_NONEXISTENT = "nonexistent@example.com"
+TEST_USER_FULL_NAME_UPDATED = "Updated Name"
+TEST_USER_PASSWORD_NEW = "newpassword456"
+TEST_USER_FULL_NAME_HACKER = "Hacker"
 
 
 def create_test_user(test_app: FastAPI, client: TestClient) -> UserRead:
@@ -92,8 +101,8 @@ class TestUserCreate:
             test_app.url_path_for(RouteName.USERS_CREATE_USER),
             json={
                 "email": TEST_USER_EMAIL,
-                "password": "password456",
-                "fullName": "Another User",
+                "password": TEST_USER_PASSWORD_ALT,
+                "fullName": TEST_USER_FULL_NAME_ALT,
             },
         )
 
@@ -110,9 +119,9 @@ class TestUserCreate:
         response = client.post(
             test_app.url_path_for(RouteName.USERS_CREATE_USER),
             json={
-                "email": "invalid-email",
-                "password": "password123",
-                "fullName": "Test User",
+                "email": TEST_USER_INVALID_EMAIL,
+                "password": TEST_USER_PASSWORD,
+                "fullName": TEST_USER_FULL_NAME,
             },
         )
 
@@ -123,9 +132,9 @@ class TestUserCreate:
         response = client.post(
             test_app.url_path_for(RouteName.USERS_CREATE_USER),
             json={
-                "email": "test@example.com",
-                "password": "short",
-                "fullName": "Test User",
+                "email": TEST_USER_EMAIL,
+                "password": TEST_USER_PASSWORD_SHORT,
+                "fullName": TEST_USER_FULL_NAME,
             },
         )
 
@@ -168,7 +177,7 @@ class TestUserLogin:
             test_app.url_path_for(RouteName.USERS_LOGIN),
             json={
                 "email": TEST_USER_EMAIL,
-                "password": "wrongpassword",
+                "password": TEST_USER_PASSWORD_WRONG,
             },
         )
 
@@ -183,8 +192,8 @@ class TestUserLogin:
         response = client.post(
             test_app.url_path_for(RouteName.USERS_LOGIN),
             json={
-                "email": "nonexistent@example.com",
-                "password": "password123",
+                "email": TEST_USER_EMAIL_NONEXISTENT,
+                "password": TEST_USER_PASSWORD,
             },
         )
 
@@ -210,8 +219,8 @@ class TestUserProfile:
         # Pydantic 모델로 응답 검증
         response_model = BaseResponse[UserRead].model_validate(response.json())
         assert response_model.code == "OK"
-        assert response_model.result.email == "test@example.com"
-        assert response_model.result.full_name == "Test User"
+        assert response_model.result.email == TEST_USER_EMAIL
+        assert response_model.result.full_name == TEST_USER_FULL_NAME
 
     def test_get_current_user_without_auth(self, test_app: FastAPI, client: TestClient) -> None:
         """인증 없이 현재 사용자 정보 조회 실패 테스트"""
@@ -224,7 +233,7 @@ class TestUserProfile:
         response = client.patch(
             test_app.url_path_for(RouteName.USERS_UPDATE_CURRENT_USER),
             headers=headers,
-            json={"fullName": "Updated Name"},
+            json={"fullName": TEST_USER_FULL_NAME_UPDATED},
         )
 
         assert response.status_code == status.HTTP_200_OK
@@ -232,13 +241,13 @@ class TestUserProfile:
         # Pydantic 모델로 응답 검증
         response_model = BaseResponse[UserRead].model_validate(response.json())
         assert response_model.code == "OK"
-        assert response_model.result.full_name == "Updated Name"
+        assert response_model.result.full_name == TEST_USER_FULL_NAME_UPDATED
         assert response_model.result.email == TEST_USER_EMAIL
 
     def test_update_user_password(self, test_app: FastAPI, client: TestClient) -> None:
         """사용자 비밀번호 수정 성공 테스트"""
         headers = self.auth_headers(test_app, client)
-        new_password = "newpassword456"
+        new_password = TEST_USER_PASSWORD_NEW
 
         # 비밀번호 변경
         response = client.patch(
@@ -269,7 +278,7 @@ class TestUserProfile:
         """인증 없이 사용자 정보 수정 실패 테스트"""
         response = client.patch(
             test_app.url_path_for(RouteName.USERS_UPDATE_CURRENT_USER),
-            json={"fullName": "Hacker"},
+            json={"fullName": TEST_USER_FULL_NAME_HACKER},
         )
 
         assert response.status_code == status.HTTP_403_FORBIDDEN
