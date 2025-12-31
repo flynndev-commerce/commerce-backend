@@ -18,6 +18,12 @@ class RouteName(StrEnum):
     PRODUCTS_GET = "products:get-product"
     PRODUCTS_UPDATE = "products:update-product"
 
+    # Carts
+    CARTS_GET_MY_CART = "carts:get-my-cart"
+    CARTS_ADD_ITEM = "carts:add-item"
+    CARTS_UPDATE_ITEM = "carts:update-item"
+    CARTS_REMOVE_ITEM = "carts:remove-item"
+
     # Orders
     ORDERS_CREATE = "orders:create-order"
     ORDERS_LIST = "orders:list-orders"
