@@ -3,12 +3,14 @@ from dependency_injector import containers, providers
 from app.application.use_cases.cart_use_case import CartUseCase
 from app.application.use_cases.order_use_case import OrderUseCase
 from app.application.use_cases.product_use_case import ProductUseCase
+from app.application.use_cases.seller_use_case import SellerUseCase
 from app.application.use_cases.user_use_case import UserUseCase
 from app.core.config import get_settings
 from app.core.db import get_session
 from app.infrastructure.persistence.cart_repository import SQLCartRepository
 from app.infrastructure.persistence.order_repository import SQLOrderRepository
 from app.infrastructure.persistence.product_repository import SQLProductRepository
+from app.infrastructure.persistence.seller_repository import SQLSellerRepository
 from app.infrastructure.persistence.unit_of_work import SQLAlchemyUnitOfWork
 from app.infrastructure.persistence.user_repository import SQLUserRepository
 
@@ -46,6 +48,10 @@ class Container(containers.DeclarativeContainer):
         SQLCartRepository,
         session=db_session,
     )
+    seller_repository = providers.Factory(
+        SQLSellerRepository,
+        session=db_session,
+    )
 
     # Unit of Work
     uow = providers.Factory(
@@ -75,5 +81,11 @@ class Container(containers.DeclarativeContainer):
         CartUseCase,
         cart_repository=cart_repository,
         product_repository=product_repository,
+        uow=uow,
+    )
+    seller_use_case = providers.Factory(
+        SellerUseCase,
+        seller_repository=seller_repository,
+        user_repository=user_repository,
         uow=uow,
     )
