@@ -22,13 +22,18 @@ TEST_USER_PASSWORD_NEW = "newpassword456"
 TEST_USER_FULL_NAME_HACKER = "Hacker"
 
 
-def create_test_user(test_app: FastAPI, client: TestClient) -> UserRead:
+def create_test_user(
+    test_app: FastAPI,
+    client: TestClient,
+    email: str = TEST_USER_EMAIL,
+    password: str = TEST_USER_PASSWORD,
+) -> UserRead:
     """테스트용 사용자를 생성하고 UserRead 모델을 반환하는 헬퍼 함수"""
     response = client.post(
         test_app.url_path_for(RouteName.USERS_CREATE_USER),
         json={
-            "email": TEST_USER_EMAIL,
-            "password": TEST_USER_PASSWORD,
+            "email": email,
+            "password": password,
             "fullName": TEST_USER_FULL_NAME,
         },
     )
@@ -38,8 +43,8 @@ def create_test_user(test_app: FastAPI, client: TestClient) -> UserRead:
         login_response = client.post(
             test_app.url_path_for(RouteName.USERS_LOGIN),
             json={
-                "email": TEST_USER_EMAIL,
-                "password": TEST_USER_PASSWORD,
+                "email": email,
+                "password": password,
             },
         )
         # 로그인 성공 후 현재 사용자 정보 조회
@@ -54,13 +59,18 @@ def create_test_user(test_app: FastAPI, client: TestClient) -> UserRead:
     return response_model.result
 
 
-def login_and_get_token(test_app: FastAPI, client: TestClient) -> str:
+def login_and_get_token(
+    test_app: FastAPI,
+    client: TestClient,
+    email: str = TEST_USER_EMAIL,
+    password: str = TEST_USER_PASSWORD,
+) -> str:
     """로그인하여 토큰을 반환하는 헬퍼 함수"""
     response = client.post(
         test_app.url_path_for(RouteName.USERS_LOGIN),
         json={
-            "email": TEST_USER_EMAIL,
-            "password": TEST_USER_PASSWORD,
+            "email": email,
+            "password": password,
         },
     )
     response_model = BaseResponse[Token].model_validate(response.json())

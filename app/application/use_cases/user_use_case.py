@@ -3,7 +3,7 @@ from fastapi import HTTPException, status
 from app.application.dto.token import TokenPayload
 from app.application.dto.user_dto import UserCreate, UserRead, UserUpdate
 from app.core import security
-from app.domain.model.user import User
+from app.domain.model.user import User, UserRole
 from app.domain.ports.unit_of_work import IUnitOfWork
 from app.domain.ports.user_repository import IUserRepository
 
@@ -84,4 +84,22 @@ class UserUseCase:
             updated_user = await self.user_repository.update(user=updated_user_obj)
             return UserRead.model_validate(updated_user)
 
-        return UserRead.model_validate(updated_user)
+    async def register_as_seller(self, user_id: int) -> UserRead:
+        """사용자를 판매자로 등록(역할 변경)합니다."""
+        async with self.uow:
+            user = await self.user_repository.get_by_id(user_id=user_id)
+            if not user:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail="사용자를 찾을 수 없습니다.",
+                )
+
+            if user.role == UserRole.SELLER:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="이미 판매자로 등록된 사용자입니다.",
+                )
+
+            user.role = UserRole.SELLER
+            updated_user = await self.user_repository.update(user=user)
+            return UserRead.model_validate(updated_user)

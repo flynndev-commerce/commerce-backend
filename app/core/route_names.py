@@ -11,6 +11,7 @@ class RouteName(StrEnum):
     USERS_LOGIN = "users:login"
     USERS_GET_CURRENT_USER = "users:get-current-user"
     USERS_UPDATE_CURRENT_USER = "users:update-current-user"
+    USERS_REGISTER_SELLER = "users:register-seller"
 
     # Products
     PRODUCTS_CREATE = "products:create-product"

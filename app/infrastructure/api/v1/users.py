@@ -4,8 +4,10 @@ from dependency_injector.wiring import Provide, inject
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.application.dto.response import BaseResponse
+from app.application.dto.seller_dto import SellerCreate, SellerRead
 from app.application.dto.token import Token
 from app.application.dto.user_dto import UserCreate, UserLogin, UserRead, UserUpdate
+from app.application.use_cases.seller_use_case import SellerUseCase
 from app.application.use_cases.user_use_case import UserUseCase
 from app.containers import Container
 from app.core.route_names import RouteName
@@ -91,3 +93,26 @@ async def update_current_user_info(
 
     updated_user = await user_use_case.update_user(current_user.id, user_update)
     return BaseResponse(result=updated_user)
+
+
+@router.post(
+    "/me/seller",
+    summary="판매자 등록",
+    response_model=BaseResponse[SellerRead],
+    status_code=status.HTTP_201_CREATED,
+    name=RouteName.USERS_REGISTER_SELLER,
+)
+@inject
+async def register_as_seller(
+    seller_create: SellerCreate,
+    current_user: Annotated[User, Depends(get_current_user)],
+    seller_use_case: Annotated[SellerUseCase, Depends(Provide[Container.seller_use_case])],
+) -> BaseResponse[SellerRead]:
+    """
+    현재 사용자를 판매자로 등록합니다.
+    """
+    if current_user.id is None:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid user ID")
+
+    created_seller = await seller_use_case.register_seller(current_user.id, seller_create)
+    return BaseResponse(result=created_seller)

@@ -1,8 +1,10 @@
 from typing import Annotated
 
-from pydantic import EmailStr, Field
+from pydantic import AliasChoices, EmailStr, Field
 
 from app.application.dto.base import CamelCaseBaseModel
+from app.application.dto.seller_dto import SellerRead
+from app.domain.model.user import UserRole
 
 
 # 사용자 스키마의 공통 기본 속성
@@ -26,6 +28,16 @@ class UserCreate(UserBase):
 class UserRead(UserBase):
     id: Annotated[int, Field(title="고유 ID", description="사용자의 고유 식별자")]
     is_active: Annotated[bool, Field(title="활성 상태", description="사용자 계정의 활성화 여부")]
+    role: Annotated[UserRole, Field(title="역할", description="사용자 역할")]
+    seller_info: Annotated[
+        SellerRead | None,
+        Field(
+            default=None,
+            title="판매자 정보",
+            description="사용자가 판매자인 경우 판매자 정보",
+            validation_alias=AliasChoices("seller", "sellerInfo", "seller_info"),
+        ),
+    ]
 
 
 # 사용자 로그인을 위한 스키마

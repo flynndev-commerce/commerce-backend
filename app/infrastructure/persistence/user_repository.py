@@ -1,3 +1,4 @@
+from sqlalchemy.orm import selectinload
 from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
@@ -17,10 +18,16 @@ class SQLUserRepository(IUserRepository):
         self.session.add(db_user)
         await self.session.flush()
         await self.session.refresh(db_user)
-        return User.model_validate(db_user)
+
+        # 관계 데이터를 포함하여 다시 조회
+        statement = select(UserEntity).where(UserEntity.id == db_user.id).options(selectinload(UserEntity.seller))  # type: ignore
+        result = await self.session.exec(statement)
+        db_user_loaded = result.one()
+
+        return User.model_validate(db_user_loaded)
 
     async def get_by_email(self, email: str) -> User | None:
-        statement = select(UserEntity).where(UserEntity.email == email)
+        statement = select(UserEntity).where(UserEntity.email == email).options(selectinload(UserEntity.seller))  # type: ignore
         result = await self.session.exec(statement)
         db_user = result.first()
         if db_user:
@@ -28,7 +35,7 @@ class SQLUserRepository(IUserRepository):
         return None
 
     async def get_by_id(self, user_id: int) -> User | None:
-        statement = select(UserEntity).where(UserEntity.id == user_id)
+        statement = select(UserEntity).where(UserEntity.id == user_id).options(selectinload(UserEntity.seller))  # type: ignore
         result = await self.session.exec(statement)
         db_user = result.first()
         if db_user:
@@ -48,9 +55,17 @@ class SQLUserRepository(IUserRepository):
         # 받은 user 모델의 값으로 db_user 객체의 값을 업데이트합니다.
         user_data = user.model_dump(exclude_unset=True)
         for key, value in user_data.items():
+            if key == "seller":
+                continue  # seller 정보는 별도로 업데이트해야 함
             setattr(db_user, key, value)
 
         self.session.add(db_user)
         await self.session.flush()
         await self.session.refresh(db_user)
-        return User.model_validate(db_user)
+
+        # 관계 데이터를 포함하여 다시 조회
+        statement = select(UserEntity).where(UserEntity.id == db_user.id).options(selectinload(UserEntity.seller))  # type: ignore
+        result = await self.session.exec(statement)
+        db_user_loaded = result.one()
+
+        return User.model_validate(db_user_loaded)

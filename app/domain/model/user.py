@@ -1,5 +1,17 @@
+from enum import StrEnum
+
 import bcrypt
 from pydantic import BaseModel, EmailStr, Field
+
+from app.domain.model.seller import Seller
+
+
+class UserRole(StrEnum):
+    """사용자 역할"""
+
+    BUYER = "buyer"
+    SELLER = "seller"
+    ADMIN = "admin"
 
 
 class User(BaseModel):
@@ -10,6 +22,8 @@ class User(BaseModel):
     full_name: str | None = Field(default=None, title="전체 이름", description="사용자의 전체 이름")
     hashed_password: str = Field(title="해시된 비밀번호", description="암호화된 사용자 비밀번호")
     is_active: bool = Field(default=True, title="활성 상태", description="사용자 계정의 활성화 여부")
+    role: UserRole = Field(default=UserRole.BUYER, title="역할", description="사용자 역할 (구매자, 판매자, 관리자)")
+    seller: Seller | None = Field(default=None, title="판매자 정보", description="사용자가 판매자인 경우 판매자 정보")
 
     class Config:
         from_attributes = True

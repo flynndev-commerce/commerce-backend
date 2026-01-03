@@ -1,6 +1,11 @@
-from typing import Annotated, ClassVar
+from typing import TYPE_CHECKING, Annotated, ClassVar
 
-from sqlmodel import Field, SQLModel
+from sqlmodel import Field, Relationship, SQLModel
+
+from app.domain.model.user import UserRole
+
+if TYPE_CHECKING:
+    from app.infrastructure.persistence.models.seller_entity import SellerEntity
 
 
 class UserEntity(SQLModel, table=True):
@@ -36,3 +41,13 @@ class UserEntity(SQLModel, table=True):
         bool,
         Field(default=True, title="활성 상태", description="사용자 계정의 활성화 여부"),
     ]
+    role: Annotated[
+        UserRole,
+        Field(
+            default=UserRole.BUYER,
+            title="역할",
+            description="사용자 역할 (구매자, 판매자, 관리자)",
+        ),
+    ]
+
+    seller: "SellerEntity" = Relationship(back_populates="user", sa_relationship_kwargs={"uselist": False})
