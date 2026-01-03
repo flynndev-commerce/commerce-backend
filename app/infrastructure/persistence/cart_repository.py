@@ -67,7 +67,7 @@ class SQLCartRepository(ICartRepository):
             return
         statement = select(CartItemEntity).where(
             CartItemEntity.user_id == user_id,
-            CartItemEntity.product_id.in_(product_ids),
+            CartItemEntity.product_id.in_(product_ids),  # type: ignore
         )
         result = await self.session.exec(statement)
         entities = result.all()

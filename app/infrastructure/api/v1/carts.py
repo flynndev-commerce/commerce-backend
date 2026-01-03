@@ -78,9 +78,7 @@ async def update_cart_item(
     if current_user.id is None:
         raise ValueError("User ID is missing")
 
-    cart = await cart_use_case.update_item_quantity(
-        user_id=current_user.id, product_id=product_id, item_update=item_in
-    )
+    cart = await cart_use_case.update_item_quantity(user_id=current_user.id, product_id=product_id, item_update=item_in)
     return BaseResponse(result=cart)
 
 
