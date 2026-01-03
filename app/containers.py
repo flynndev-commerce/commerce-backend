@@ -68,6 +68,7 @@ class Container(containers.DeclarativeContainer):
         OrderUseCase,
         order_repository=order_repository,
         product_repository=product_repository,
+        cart_repository=cart_repository,
         uow=uow,
     )
     cart_use_case = providers.Factory(

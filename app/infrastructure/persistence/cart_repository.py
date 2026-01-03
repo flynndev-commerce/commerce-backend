@@ -51,4 +51,32 @@ class SQLCartRepository(ICartRepository):
             entity = await self.session.get(CartItemEntity, cart_item.id)
             if entity:
                 await self.session.delete(entity)
-                await self.session.flush()
+
+    async def delete_by_user_and_product(self, user_id: int, product_id: int) -> None:
+        statement = select(CartItemEntity).where(
+            CartItemEntity.user_id == user_id,
+            CartItemEntity.product_id == product_id,
+        )
+        result = await self.session.exec(statement)
+        entity = result.first()
+        if entity:
+            await self.session.delete(entity)
+
+    async def delete_items_by_user_id(self, user_id: int, product_ids: list[int]) -> None:
+        if not product_ids:
+            return
+        statement = select(CartItemEntity).where(
+            CartItemEntity.user_id == user_id,
+            CartItemEntity.product_id.in_(product_ids),
+        )
+        result = await self.session.exec(statement)
+        entities = result.all()
+        for entity in entities:
+            await self.session.delete(entity)
+
+    async def delete_all_by_user_id(self, user_id: int) -> None:
+        statement = select(CartItemEntity).where(CartItemEntity.user_id == user_id)
+        result = await self.session.exec(statement)
+        entities = result.all()
+        for entity in entities:
+            await self.session.delete(entity)

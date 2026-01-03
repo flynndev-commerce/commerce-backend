@@ -6,6 +6,7 @@ from app.application.dto.order_dto import OrderRead
 from app.application.dto.response import BaseResponse
 from app.core.route_names import RouteName
 from app.domain.model.order import OrderStatus
+from tests.v1.carts.helpers import TEST_CART_ITEM_QUANTITY
 from tests.v1.orders.helpers import TEST_ORDER_QUANTITY, TEST_ORDER_QUANTITY_EXCESS
 from tests.v1.products.helpers import TEST_PRODUCT_ID_NONEXISTENT, TEST_PRODUCT_PRICE, create_test_product
 from tests.v1.users.helpers import create_test_user, login_and_get_token
@@ -84,3 +85,100 @@ class TestOrderCreate:
         )
 
         assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+
+    def test_create_order_removes_items_from_cart(self, test_app: FastAPI, client: TestClient) -> None:
+        """주문 생성 시 장바구니에 해당 상품이 있다면 제거되는지 테스트"""
+        # Given
+        create_test_user(test_app, client)
+        token = login_and_get_token(test_app, client)
+        headers = {"Authorization": f"Bearer {token}"}
+        product = create_test_product(test_app, client)
+
+        # 1. 장바구니에 상품 담기
+        client.post(
+            test_app.url_path_for(RouteName.CARTS_ADD_ITEM),
+            headers=headers,
+            json={
+                "productId": product.id,
+                "quantity": TEST_CART_ITEM_QUANTITY,
+            },
+        )
+
+        # When
+        # 2. 해당 상품 직접 주문
+        response = client.post(
+            test_app.url_path_for(RouteName.ORDERS_CREATE),
+            headers=headers,
+            json={
+                "items": [
+                    {
+                        "productId": product.id,
+                        "quantity": 1,
+                    }
+                ]
+            },
+        )
+
+        # Then
+        assert response.status_code == status.HTTP_201_CREATED
+        
+        # 3. 장바구니 확인 (비어있어야 함)
+        cart_response = client.get(
+            test_app.url_path_for(RouteName.CARTS_GET_MY_CART),
+            headers=headers,
+        )
+        assert cart_response.status_code == status.HTTP_200_OK
+        cart_data = cart_response.json()
+        assert len(cart_data["result"]["items"]) == 0
+
+    def test_create_order_removes_only_ordered_items_from_cart(self, test_app: FastAPI, client: TestClient) -> None:
+        """주문 생성 시 주문한 상품만 장바구니에서 제거되고 나머지는 유지되는지 테스트"""
+        # Given
+        create_test_user(test_app, client)
+        token = login_and_get_token(test_app, client)
+        headers = {"Authorization": f"Bearer {token}"}
+        
+        product1 = create_test_product(test_app, client, name="Product 1", price=1000)
+        product2 = create_test_product(test_app, client, name="Product 2", price=2000)
+
+        # 1. 장바구니에 두 상품 담기
+        client.post(
+            test_app.url_path_for(RouteName.CARTS_ADD_ITEM),
+            headers=headers,
+            json={"productId": product1.id, "quantity": 1},
+        )
+        client.post(
+            test_app.url_path_for(RouteName.CARTS_ADD_ITEM),
+            headers=headers,
+            json={"productId": product2.id, "quantity": 1},
+        )
+
+        # When
+        # 2. Product 1만 직접 주문
+        response = client.post(
+            test_app.url_path_for(RouteName.ORDERS_CREATE),
+            headers=headers,
+            json={
+                "items": [
+                    {
+                        "productId": product1.id,
+                        "quantity": 1,
+                    }
+                ]
+            },
+        )
+
+        # Then
+        assert response.status_code == status.HTTP_201_CREATED
+
+        # 3. 장바구니 확인 (Product 2만 남아있어야 함)
+        cart_response = client.get(
+            test_app.url_path_for(RouteName.CARTS_GET_MY_CART),
+            headers=headers,
+        )
+        assert cart_response.status_code == status.HTTP_200_OK
+        cart_data = cart_response.json()
+        items = cart_data["result"]["items"]
+        
+        assert len(items) == 1
+        assert items[0]["productId"] == product2.id

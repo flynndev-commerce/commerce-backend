@@ -25,3 +25,18 @@ class ICartRepository(ABC):
     async def delete(self, cart_item: CartItem) -> None:
         """장바구니 항목을 삭제합니다."""
         pass
+
+    @abstractmethod
+    async def delete_by_user_and_product(self, user_id: int, product_id: int) -> None:
+        """사용자 ID와 상품 ID로 장바구니 항목을 삭제합니다."""
+        pass
+
+    @abstractmethod
+    async def delete_items_by_user_id(self, user_id: int, product_ids: list[int]) -> None:
+        """사용자 ID와 여러 상품 ID로 장바구니 항목들을 삭제합니다."""
+        pass
+
+    @abstractmethod
+    async def delete_all_by_user_id(self, user_id: int) -> None:
+        """사용자의 모든 장바구니 항목을 삭제합니다."""
+        pass

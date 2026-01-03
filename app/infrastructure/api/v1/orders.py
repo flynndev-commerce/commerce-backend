@@ -34,6 +34,27 @@ async def create_order(
     return BaseResponse(result=created_order)
 
 
+@router.post(
+    "/checkout",
+    summary="장바구니 결제",
+    response_model=BaseResponse[OrderRead],
+    status_code=status.HTTP_201_CREATED,
+    name=RouteName.ORDERS_CHECKOUT,
+)
+@inject
+async def checkout_from_cart(
+    current_user: Annotated[UserRead, Depends(get_current_user)],
+    order_use_case: Annotated[OrderUseCase, Depends(Provide[Container.order_use_case])],
+) -> BaseResponse[OrderRead]:
+    """
+    장바구니에 있는 모든 상품을 주문합니다.
+    """
+    created_order = await order_use_case.create_order_from_cart(
+        user_id=current_user.id,
+    )
+    return BaseResponse(result=created_order)
+
+
 @router.get(
     "",
     summary="내 주문 목록 조회",

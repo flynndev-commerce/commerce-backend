@@ -1,7 +1,11 @@
+from collections.abc import Sequence
+from typing import Any
+
 from fastapi import HTTPException, status
 
 from app.application.dto.order_dto import OrderCreate, OrderRead
 from app.domain.model.order import Order, OrderItem, OrderStatus
+from app.domain.ports.cart_repository import ICartRepository
 from app.domain.ports.order_repository import IOrderRepository
 from app.domain.ports.product_repository import IProductRepository
 from app.domain.ports.unit_of_work import IUnitOfWork
@@ -14,11 +18,60 @@ class OrderUseCase:
         self,
         order_repository: IOrderRepository,
         product_repository: IProductRepository,
+        cart_repository: ICartRepository,
         uow: IUnitOfWork,
     ):
         self.order_repository = order_repository
         self.product_repository = product_repository
+        self.cart_repository = cart_repository
         self.uow = uow
+
+    async def _create_order_core(self, user_id: int, items: Sequence[Any]) -> Order:
+        """
+        주문 생성 핵심 로직 (재고 확인, 차감, 주문 객체 생성 및 저장)
+        items의 각 요소는 product_id와 quantity 속성을 가져야 합니다.
+        """
+        total_price = 0.0
+        order_items = []
+
+        for item in items:
+            product = await self.product_repository.get_by_id(item.product_id)
+            if not product:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail=f"상품을 찾을 수 없습니다. (ID: {item.product_id})",
+                )
+
+            if product.stock < item.quantity:
+                raise HTTPException(
+                    status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                    detail=(f"재고가 부족합니다. (상품: {product.name}, 재고: {product.stock}, 요청: {item.quantity})"),
+                )
+
+            # 가격 계산 및 아이템 생성
+            item_price = product.price * item.quantity
+            total_price += item_price
+
+            order_items.append(
+                OrderItem(
+                    product_id=product.id,  # type: ignore
+                    price=product.price,
+                    quantity=item.quantity,
+                )
+            )
+
+            # 재고 차감
+            product.stock -= item.quantity
+            await self.product_repository.update(product)
+
+        # 주문 생성
+        order = Order(
+            user_id=user_id,
+            total_price=total_price,
+            items=order_items,
+        )
+
+        return await self.order_repository.save(order)
 
     async def create_order(self, user_id: int, order_create: OrderCreate) -> OrderRead:
         """
@@ -29,50 +82,12 @@ class OrderUseCase:
         4. 주문 저장
         """
         async with self.uow:
-            total_price = 0.0
-            order_items = []
+            saved_order = await self._create_order_core(user_id, order_create.items)
 
-            for item_create in order_create.items:
-                product = await self.product_repository.get_by_id(item_create.product_id)
-                if not product:
-                    raise HTTPException(
-                        status_code=status.HTTP_404_NOT_FOUND,
-                        detail=f"상품을 찾을 수 없습니다. (ID: {item_create.product_id})",
-                    )
+            # 주문한 상품이 장바구니에 있다면 제거
+            product_ids = [item.product_id for item in order_create.items]
+            await self.cart_repository.delete_items_by_user_id(user_id, product_ids)
 
-                if product.stock < item_create.quantity:
-                    raise HTTPException(
-                        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                        detail=(
-                            f"재고가 부족합니다. (상품: {product.name}, "
-                            f"재고: {product.stock}, 요청: {item_create.quantity})"
-                        ),
-                    )
-
-                # 가격 계산 및 아이템 생성
-                item_price = product.price * item_create.quantity
-                total_price += item_price
-
-                order_items.append(
-                    OrderItem(
-                        product_id=product.id,  # type: ignore
-                        price=product.price,
-                        quantity=item_create.quantity,
-                    )
-                )
-
-                # 재고 차감
-                product.stock -= item_create.quantity
-                await self.product_repository.update(product)
-
-            # 주문 생성
-            order = Order(
-                user_id=user_id,
-                total_price=total_price,
-                items=order_items,
-            )
-
-            saved_order = await self.order_repository.save(order)
             return OrderRead.model_validate(saved_order)
 
     async def list_orders(self, user_id: int, offset: int, limit: int) -> list[OrderRead]:
@@ -137,3 +152,26 @@ class OrderUseCase:
             updated_order = await self.order_repository.save(order)
 
             return OrderRead.model_validate(updated_order)
+
+    async def create_order_from_cart(self, user_id: int) -> OrderRead:
+        """
+        장바구니에 있는 모든 상품을 주문합니다.
+        1. 장바구니 조회
+        2. 재고 확인 및 차감
+        3. 주문 생성
+        4. 장바구니 비우기
+        """
+        async with self.uow:
+            cart_items = await self.cart_repository.get_all_by_user_id(user_id)
+            if not cart_items:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="장바구니가 비어있습니다.",
+                )
+
+            saved_order = await self._create_order_core(user_id, cart_items)
+
+            # 장바구니 비우기
+            await self.cart_repository.delete_all_by_user_id(user_id)
+
+            return OrderRead.model_validate(saved_order)
