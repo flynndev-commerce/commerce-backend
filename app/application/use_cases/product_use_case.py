@@ -1,8 +1,7 @@
 from collections.abc import Sequence
 
-from fastapi import HTTPException, status
-
 from app.application.dto.product_dto import ProductCreate, ProductRead, ProductUpdate
+from app.core.exceptions import ProductNotFoundException
 from app.domain.model.product import Product
 from app.domain.ports.product_repository import IProductRepository
 from app.domain.ports.unit_of_work import IUnitOfWork
@@ -22,10 +21,7 @@ class ProductUseCase:
     async def get_product_by_id(self, product_id: int) -> ProductRead:
         product = await self.product_repository.get_by_id(product_id=product_id)
         if not product:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="상품을 찾을 수 없습니다.",
-            )
+            raise ProductNotFoundException()
         return ProductRead.model_validate(product)
 
     async def list_products(self, offset: int, limit: int) -> Sequence[ProductRead]:
@@ -36,10 +32,7 @@ class ProductUseCase:
         async with self.uow:
             product_to_update = await self.product_repository.get_by_id(product_id=product_id)
             if not product_to_update:
-                raise HTTPException(
-                    status_code=status.HTTP_404_NOT_FOUND,
-                    detail="상품을 찾을 수 없습니다.",
-                )
+                raise ProductNotFoundException()
 
             update_data = product_update.model_dump(exclude_unset=True)
             updated_product_obj = product_to_update.model_copy(update=update_data)

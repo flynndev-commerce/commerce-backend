@@ -1,9 +1,15 @@
 from collections.abc import Sequence
 from typing import Any
 
-from fastapi import HTTPException, status
-
 from app.application.dto.order_dto import OrderCreate, OrderRead
+from app.core.exceptions import (
+    BadRequestException,
+    EmptyCartException,
+    ForbiddenException,
+    InsufficientStockException,
+    OrderNotFoundException,
+    ProductNotFoundException,
+)
 from app.domain.model.order import Order, OrderItem, OrderStatus
 from app.domain.ports.cart_repository import ICartRepository
 from app.domain.ports.order_repository import IOrderRepository
@@ -37,15 +43,11 @@ class OrderUseCase:
         for item in items:
             product = await self.product_repository.get_by_id(item.product_id)
             if not product:
-                raise HTTPException(
-                    status_code=status.HTTP_404_NOT_FOUND,
-                    detail=f"상품을 찾을 수 없습니다. (ID: {item.product_id})",
-                )
+                raise ProductNotFoundException(message=f"상품을 찾을 수 없습니다. (ID: {item.product_id})")
 
             if product.stock < item.quantity:
-                raise HTTPException(
-                    status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                    detail=(f"재고가 부족합니다. (상품: {product.name}, 재고: {product.stock}, 요청: {item.quantity})"),
+                raise InsufficientStockException(
+                    message=f"재고가 부족합니다. (상품: {product.name}, 재고: {product.stock}, 요청: {item.quantity})"
                 )
 
             # 가격 계산 및 아이템 생성
@@ -99,16 +101,10 @@ class OrderUseCase:
         """주문 상세 정보를 조회합니다."""
         order = await self.order_repository.find_by_id(order_id)
         if not order:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="주문을 찾을 수 없습니다.",
-            )
+            raise OrderNotFoundException()
 
         if order.user_id != user_id:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="해당 주문에 대한 권한이 없습니다.",
-            )
+            raise ForbiddenException(message="해당 주문에 대한 권한이 없습니다.")
 
         return OrderRead.model_validate(order)
 
@@ -123,22 +119,13 @@ class OrderUseCase:
         async with self.uow:
             order = await self.order_repository.find_by_id(order_id)
             if not order:
-                raise HTTPException(
-                    status_code=status.HTTP_404_NOT_FOUND,
-                    detail="주문을 찾을 수 없습니다.",
-                )
+                raise OrderNotFoundException()
 
             if order.user_id != user_id:
-                raise HTTPException(
-                    status_code=status.HTTP_403_FORBIDDEN,
-                    detail="해당 주문에 대한 권한이 없습니다.",
-                )
+                raise ForbiddenException(message="해당 주문에 대한 권한이 없습니다.")
 
             if order.status not in [OrderStatus.PENDING, OrderStatus.PAID]:
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="이미 배송이 시작되었거나 취소된 주문은 취소할 수 없습니다.",
-                )
+                raise BadRequestException(message="이미 배송이 시작되었거나 취소된 주문은 취소할 수 없습니다.")
 
             # 재고 복구
             for item in order.items:
@@ -164,10 +151,7 @@ class OrderUseCase:
         async with self.uow:
             cart_items = await self.cart_repository.get_all_by_user_id(user_id)
             if not cart_items:
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="장바구니가 비어있습니다.",
-                )
+                raise EmptyCartException()
 
             saved_order = await self._create_order_core(user_id, cart_items)
 

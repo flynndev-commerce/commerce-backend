@@ -1,8 +1,13 @@
-from fastapi import HTTPException, status
-
 from app.application.dto.token import TokenPayload
 from app.application.dto.user_dto import UserCreate, UserRead, UserUpdate
 from app.core import security
+from app.core.exceptions import (
+    EmailAlreadyExistsException,
+    InvalidCredentialsException,
+    SellerAlreadyExistsException,
+    UserInactiveException,
+    UserNotFoundException,
+)
 from app.domain.model.user import User, UserRole
 from app.domain.ports.unit_of_work import IUnitOfWork
 from app.domain.ports.user_repository import IUserRepository
@@ -17,10 +22,7 @@ class UserUseCase:
         async with self.uow:
             existing_user = await self.user_repository.get_by_email(email=user_create.email)
             if existing_user:
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="이미 등록된 이메일입니다.",
-                )
+                raise EmailAlreadyExistsException()
 
             hashed_password = security.get_password_hash(user_create.password)
 
@@ -42,14 +44,10 @@ class UserUseCase:
 
         # 도메인 모델의 메서드를 사용하여 비밀번호 확인
         if not user or not user.check_password(password):
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="이메일 또는 비밀번호가 올바르지 않습니다.",
-                headers={"WWW-Authenticate": "Bearer"},
-            )
+            raise InvalidCredentialsException()
 
         if not user.is_active:
-            raise HTTPException(status_code=400, detail="비활성화된 계정입니다.")
+            raise UserInactiveException()
 
         access_token = security.create_access_token(data=TokenPayload(sub=user.email))
         return access_token
@@ -64,10 +62,7 @@ class UserUseCase:
         async with self.uow:
             user_to_update = await self.user_repository.get_by_id(user_id=user_id)
             if not user_to_update:
-                raise HTTPException(
-                    status_code=status.HTTP_404_NOT_FOUND,
-                    detail="사용자를 찾을 수 없습니다.",
-                )
+                raise UserNotFoundException()
 
             update_data = user_update.model_dump(exclude_unset=True)
 
@@ -89,16 +84,10 @@ class UserUseCase:
         async with self.uow:
             user = await self.user_repository.get_by_id(user_id=user_id)
             if not user:
-                raise HTTPException(
-                    status_code=status.HTTP_404_NOT_FOUND,
-                    detail="사용자를 찾을 수 없습니다.",
-                )
+                raise UserNotFoundException()
 
             if user.role == UserRole.SELLER:
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="이미 판매자로 등록된 사용자입니다.",
-                )
+                raise SellerAlreadyExistsException()
 
             user.role = UserRole.SELLER
             updated_user = await self.user_repository.update(user=user)

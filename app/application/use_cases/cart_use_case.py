@@ -1,10 +1,13 @@
-from fastapi import HTTPException, status
-
 from app.application.dto.cart_dto import (
     CartItemCreate,
     CartItemRead,
     CartItemUpdate,
     CartRead,
+)
+from app.core.exceptions import (
+    CartItemNotFoundException,
+    InsufficientStockException,
+    ProductNotFoundException,
 )
 from app.domain.model.cart import CartItem
 from app.domain.ports.cart_repository import ICartRepository
@@ -55,16 +58,10 @@ class CartUseCase:
         async with self.uow:
             product = await self.product_repository.get_by_id(item_create.product_id)
             if not product:
-                raise HTTPException(
-                    status_code=status.HTTP_404_NOT_FOUND,
-                    detail="상품을 찾을 수 없습니다.",
-                )
+                raise ProductNotFoundException()
 
             if product.stock < item_create.quantity:
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="재고가 부족합니다.",
-                )
+                raise InsufficientStockException()
 
             existing_item = await self.cart_repository.get_by_user_and_product(user_id, item_create.product_id)
 
@@ -86,23 +83,14 @@ class CartUseCase:
         async with self.uow:
             item = await self.cart_repository.get_by_user_and_product(user_id, product_id)
             if not item:
-                raise HTTPException(
-                    status_code=status.HTTP_404_NOT_FOUND,
-                    detail="장바구니에 해당 상품이 없습니다.",
-                )
+                raise CartItemNotFoundException()
 
             product = await self.product_repository.get_by_id(product_id)
             if not product:
-                raise HTTPException(
-                    status_code=status.HTTP_404_NOT_FOUND,
-                    detail="상품을 찾을 수 없습니다.",
-                )
+                raise ProductNotFoundException()
 
             if product.stock < item_update.quantity:
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="재고가 부족합니다.",
-                )
+                raise InsufficientStockException()
 
             item.quantity = item_update.quantity
             await self.cart_repository.save(item)
@@ -114,10 +102,7 @@ class CartUseCase:
         async with self.uow:
             item = await self.cart_repository.get_by_user_and_product(user_id, product_id)
             if not item:
-                raise HTTPException(
-                    status_code=status.HTTP_404_NOT_FOUND,
-                    detail="장바구니에 해당 상품이 없습니다.",
-                )
+                raise CartItemNotFoundException()
 
             await self.cart_repository.delete(item)
 

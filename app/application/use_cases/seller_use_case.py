@@ -1,6 +1,5 @@
-from fastapi import HTTPException, status
-
 from app.application.dto.seller_dto import SellerCreate, SellerRead
+from app.core.exceptions import SellerAlreadyExistsException, UserNotFoundException
 from app.domain.model.seller import Seller
 from app.domain.model.user import UserRole
 from app.domain.ports.seller_repository import ISellerRepository
@@ -25,18 +24,12 @@ class SellerUseCase:
             # 1. 사용자 확인
             user = await self.user_repository.get_by_id(user_id=user_id)
             if not user:
-                raise HTTPException(
-                    status_code=status.HTTP_404_NOT_FOUND,
-                    detail="사용자를 찾을 수 없습니다.",
-                )
+                raise UserNotFoundException()
 
             # 2. 이미 판매자인지 확인
             existing_seller = await self.seller_repository.get_by_user_id(user_id=user_id)
             if existing_seller:
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="이미 판매자로 등록된 사용자입니다.",
-                )
+                raise SellerAlreadyExistsException()
 
             # 3. 판매자 정보 생성
             seller = Seller(
