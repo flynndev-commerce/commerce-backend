@@ -20,6 +20,25 @@ TEST_PRODUCT_PRICE_UPDATED = 20000.0
 TEST_PRODUCT_ID_NONEXISTENT = 99999
 
 
+def create_test_seller(test_app: FastAPI, client: TestClient) -> dict[str, str]:
+    """테스트용 판매자를 생성하고 인증 헤더를 반환합니다."""
+    # 판매자 생성 및 로그인
+    create_test_user(test_app, client, email=TEST_SELLER_EMAIL, password=TEST_SELLER_PASSWORD)
+    token = login_and_get_token(test_app, client, email=TEST_SELLER_EMAIL, password=TEST_SELLER_PASSWORD)
+    headers = {"Authorization": f"Bearer {token}"}
+
+    # 판매자 등록 (이미 등록된 경우 무시)
+    client.post(
+        test_app.url_path_for(RouteName.USERS_REGISTER_SELLER),
+        headers=headers,
+        json={
+            "storeName": "Test Store",
+            "description": "Test Store Description",
+        },
+    )
+    return headers
+
+
 def create_test_product(
     test_app: FastAPI,
     client: TestClient,
@@ -29,23 +48,11 @@ def create_test_product(
     stock: int = TEST_PRODUCT_STOCK,
 ) -> ProductRead:
     """테스트용 상품을 생성하고 ProductRead 모델을 반환하는 헬퍼 함수"""
-    # 판매자 생성 및 로그인
-    create_test_user(test_app, client, email=TEST_SELLER_EMAIL, password=TEST_SELLER_PASSWORD)
-    token = login_and_get_token(test_app, client, email=TEST_SELLER_EMAIL, password=TEST_SELLER_PASSWORD)
-    
-    # 판매자 등록
-    client.post(
-        test_app.url_path_for(RouteName.USERS_REGISTER_SELLER),
-        headers={"Authorization": f"Bearer {token}"},
-        json={
-            "storeName": "Test Store",
-            "description": "Test Store Description",
-        },
-    )
+    headers = create_test_seller(test_app, client)
 
     response = client.post(
         test_app.url_path_for(RouteName.PRODUCTS_CREATE),
-        headers={"Authorization": f"Bearer {token}"},
+        headers=headers,
         json={
             "name": name,
             "description": description,

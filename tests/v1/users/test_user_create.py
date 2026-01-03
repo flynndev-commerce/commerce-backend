@@ -60,9 +60,9 @@ class TestUserCreate:
 
         # Pydantic 모델로 오류 응답 검증
         response_model = BaseResponse[None].model_validate(response.json())
-        assert response_model.code == "BAD_REQUEST"
+        assert response_model.code == "EMAIL_ALREADY_EXISTS"
         assert response_model.message is not None
-        assert "이미 등록된 이메일입니다." in response_model.message
+        assert "이미 존재하는 이메일입니다." in response_model.message
 
     def test_create_user_invalid_email(self, test_app: FastAPI, client: TestClient) -> None:
         """잘못된 이메일 형식으로 사용자 생성 실패 테스트"""

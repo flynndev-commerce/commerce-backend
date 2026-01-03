@@ -17,14 +17,9 @@ class TestSellerInfo:
         headers = {"Authorization": f"Bearer {token}"}
 
         # 2. Register as Seller
-        seller_data = {
-            "storeName": "My Store",
-            "description": "Best store ever"
-        }
+        seller_data = {"storeName": "My Store", "description": "Best store ever"}
         response = client.post(
-            test_app.url_path_for(RouteName.USERS_REGISTER_SELLER),
-            headers=headers,
-            json=seller_data
+            test_app.url_path_for(RouteName.USERS_REGISTER_SELLER), headers=headers, json=seller_data
         )
         assert response.status_code == status.HTTP_201_CREATED
 

@@ -121,7 +121,7 @@ class TestOrderCreate:
 
         # Then
         assert response.status_code == status.HTTP_201_CREATED
-        
+
         # 3. 장바구니 확인 (비어있어야 함)
         cart_response = client.get(
             test_app.url_path_for(RouteName.CARTS_GET_MY_CART),
@@ -137,7 +137,7 @@ class TestOrderCreate:
         create_test_user(test_app, client)
         token = login_and_get_token(test_app, client)
         headers = {"Authorization": f"Bearer {token}"}
-        
+
         product1 = create_test_product(test_app, client, name="Product 1", price=1000)
         product2 = create_test_product(test_app, client, name="Product 2", price=2000)
 
@@ -179,6 +179,6 @@ class TestOrderCreate:
         assert cart_response.status_code == status.HTTP_200_OK
         cart_data = cart_response.json()
         items = cart_data["result"]["items"]
-        
+
         assert len(items) == 1
         assert items[0]["productId"] == product2.id

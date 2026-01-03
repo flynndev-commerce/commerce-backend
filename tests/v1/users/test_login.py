@@ -56,7 +56,7 @@ class TestUserLogin:
 
         # Pydantic 모델로 오류 응답 검증
         response_model = BaseResponse[None].model_validate(response.json())
-        assert response_model.code == "BAD_REQUEST"
+        assert response_model.code == "UNAUTHORIZED"
         assert response_model.message is not None
         assert "이메일 또는 비밀번호가 올바르지 않습니다." in response_model.message
 
