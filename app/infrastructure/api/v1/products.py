@@ -1,7 +1,7 @@
 from typing import Annotated
 
 from dependency_injector.wiring import Provide, inject
-from fastapi import APIRouter, Depends, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from app.application.dto.product_dto import (
     ProductCreate,
@@ -12,6 +12,8 @@ from app.application.dto.response import BaseResponse
 from app.application.use_cases.product_use_case import ProductUseCase
 from app.containers import Container
 from app.core.route_names import RouteName
+from app.core.security import get_current_user
+from app.domain.model.user import User, UserRole
 
 router = APIRouter(prefix="/products", tags=["products"])
 
@@ -27,7 +29,14 @@ router = APIRouter(prefix="/products", tags=["products"])
 async def create_product(
     product_create: ProductCreate,
     product_use_case: Annotated[ProductUseCase, Depends(Provide[Container.product_use_case])],
+    current_user: Annotated[User, Depends(get_current_user)],
 ) -> BaseResponse[ProductRead]:
+    if current_user.role != UserRole.SELLER:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="상품 등록 권한이 없습니다. 판매자로 등록해주세요.",
+        )
+
     created_product = await product_use_case.create_product(product_create=product_create)
     return BaseResponse(result=created_product)
 
