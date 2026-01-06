@@ -6,10 +6,10 @@ from app.application.dto.order_dto import OrderRead
 from app.application.dto.response import BaseResponse
 from app.core.route_names import RouteName
 from app.domain.model.order import OrderStatus
-from tests.v1.carts.helpers import TEST_CART_ITEM_QUANTITY
-from tests.v1.orders.helpers import TEST_ORDER_QUANTITY, TEST_ORDER_QUANTITY_EXCESS
-from tests.v1.products.helpers import TEST_PRODUCT_ID_NONEXISTENT, TEST_PRODUCT_PRICE, create_test_product
-from tests.v1.users.helpers import create_test_user, login_and_get_token
+from tests.integration.v1.carts.helpers import TEST_CART_ITEM_QUANTITY
+from tests.integration.v1.orders.helpers import TEST_ORDER_QUANTITY, TEST_ORDER_QUANTITY_EXCESS
+from tests.integration.v1.products.helpers import TEST_PRODUCT_ID_NONEXISTENT, TEST_PRODUCT_PRICE, create_test_product
+from tests.integration.v1.users.helpers import create_test_user, login_and_get_token
 
 
 class TestOrderCreate:

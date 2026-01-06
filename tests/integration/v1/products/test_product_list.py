@@ -5,7 +5,7 @@ from starlette import status
 from app.application.dto.product_dto import ProductRead
 from app.application.dto.response import BaseResponse
 from app.core.route_names import RouteName
-from tests.v1.products.helpers import (
+from tests.integration.v1.products.helpers import (
     TEST_PRODUCT_DESCRIPTION,
     TEST_PRODUCT_NAME,
     TEST_PRODUCT_PRICE,

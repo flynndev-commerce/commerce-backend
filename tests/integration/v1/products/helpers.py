@@ -4,7 +4,7 @@ from fastapi.testclient import TestClient
 from app.application.dto.product_dto import ProductRead
 from app.application.dto.response import BaseResponse
 from app.core.route_names import RouteName
-from tests.v1.users.helpers import create_test_user, login_and_get_token
+from tests.integration.v1.users.helpers import create_test_user, login_and_get_token
 
 # 테스트 데이터 상수
 TEST_SELLER_EMAIL = "seller@example.com"

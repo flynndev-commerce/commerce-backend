@@ -5,8 +5,8 @@ from starlette import status
 from app.application.dto.order_dto import OrderRead
 from app.application.dto.response import BaseResponse
 from app.core.route_names import RouteName
-from tests.v1.orders.helpers import TEST_ORDER_ID_NONEXISTENT, create_test_order
-from tests.v1.users.helpers import login_and_get_token
+from tests.integration.v1.orders.helpers import TEST_ORDER_ID_NONEXISTENT, create_test_order
+from tests.integration.v1.users.helpers import login_and_get_token
 
 
 class TestOrderDetail:

@@ -3,7 +3,7 @@ from fastapi.testclient import TestClient
 from starlette import status
 
 from app.core.route_names import RouteName
-from tests.v1.users.helpers import create_test_user, login_and_get_token
+from tests.integration.v1.users.helpers import create_test_user, login_and_get_token
 
 
 class TestProductPermission:

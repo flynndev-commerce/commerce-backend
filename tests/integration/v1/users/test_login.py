@@ -5,7 +5,7 @@ from starlette import status
 from app.application.dto.response import BaseResponse
 from app.application.dto.token import Token
 from app.core.route_names import RouteName
-from tests.v1.users.helpers import (
+from tests.integration.v1.users.helpers import (
     TEST_USER_EMAIL,
     TEST_USER_EMAIL_NONEXISTENT,
     TEST_USER_PASSWORD,

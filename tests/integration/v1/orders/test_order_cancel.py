@@ -7,9 +7,9 @@ from app.application.dto.product_dto import ProductRead
 from app.application.dto.response import BaseResponse
 from app.core.route_names import RouteName
 from app.domain.model.order import OrderStatus
-from tests.v1.orders.helpers import TEST_ORDER_ID_NONEXISTENT, create_test_order
-from tests.v1.products.helpers import TEST_PRODUCT_STOCK
-from tests.v1.users.helpers import login_and_get_token
+from tests.integration.v1.orders.helpers import TEST_ORDER_ID_NONEXISTENT, create_test_order
+from tests.integration.v1.products.helpers import TEST_PRODUCT_STOCK
+from tests.integration.v1.users.helpers import login_and_get_token
 
 
 class TestOrderCancel:
