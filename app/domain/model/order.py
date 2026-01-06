@@ -38,6 +38,7 @@ class Order(BaseModel):
     items: Annotated[list[OrderItem], Field(title="주문 항목 목록")] = []
     created_at: Annotated[datetime, Field(title="생성 일시")] = Field(default_factory=datetime.now)
     updated_at: Annotated[datetime, Field(title="수정 일시")] = Field(default_factory=datetime.now)
+    version: Annotated[int, Field(title="버전")] = 1
 
     def verify_owner(self, user_id: int) -> None:
         """주문의 소유자인지 확인합니다."""

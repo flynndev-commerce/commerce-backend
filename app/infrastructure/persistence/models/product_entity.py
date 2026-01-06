@@ -1,13 +1,19 @@
-from typing import TYPE_CHECKING, Annotated, ClassVar
+from typing import TYPE_CHECKING, Annotated, Any, ClassVar
 
+from sqlalchemy import Column, Integer
 from sqlmodel import Field, Relationship, SQLModel
 
 if TYPE_CHECKING:
     from app.infrastructure.persistence.models.seller_entity import SellerEntity
 
 
+# Define explicit column for versioning to satisfy SQLAlchemy mapper args
+version_col = Column("version", Integer, default=1, nullable=False)
+
+
 class ProductEntity(SQLModel, table=True):
     __tablename__: ClassVar[str] = "product"
+    __mapper_args__: ClassVar[dict[str, Any]] = {"version_id_col": version_col}
 
     id: Annotated[
         int | None,
@@ -38,5 +44,10 @@ class ProductEntity(SQLModel, table=True):
         int,
         Field(foreign_key="seller.id", title="판매자 ID", description="상품을 등록한 판매자의 ID"),
     ]
+    version: int | None = Field(
+        default=1,
+        sa_column=version_col,
+        title="버전",
+    )
 
     seller: "SellerEntity" = Relationship(back_populates="products")

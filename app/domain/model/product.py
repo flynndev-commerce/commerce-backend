@@ -16,6 +16,7 @@ class Product(BaseModel):
     price: float = Field(gt=0, title="가격", description="상품의 가격. 0보다 커야 합니다.")
     stock: int = Field(ge=0, title="재고 수량", description="남아있는 상품의 수량. 0 이상이어야 합니다.")
     seller_id: int = Field(title="판매자 ID", description="상품을 등록한 판매자의 고유 ID")
+    version: int = Field(default=1, title="버전", description="낙관적 락을 위한 버전 정보")
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -57,7 +58,10 @@ class Product(BaseModel):
         price: float | None = None,
         stock: int | None = None,
     ) -> None:
-        """상품 정보를 수정합니다."""
+        """
+        상품 정보를 수정합니다.
+        값이 제공된 필드만 수정됩니다.
+        """
         if name is not None:
             self.name = name
 
