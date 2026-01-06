@@ -42,7 +42,7 @@ class TestUserProfile:
     def test_get_current_user_without_auth(self, test_app: FastAPI, client: TestClient) -> None:
         """인증 없이 현재 사용자 정보 조회 실패 테스트"""
         response = client.get(test_app.url_path_for(RouteName.USERS_GET_CURRENT_USER))
-        assert response.status_code == status.HTTP_403_FORBIDDEN
+        assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
     def test_update_user_full_name(self, test_app: FastAPI, client: TestClient) -> None:
         """사용자 이름 수정 성공 테스트"""
@@ -98,4 +98,4 @@ class TestUserProfile:
             json={"fullName": TEST_USER_FULL_NAME_HACKER},
         )
 
-        assert response.status_code == status.HTTP_403_FORBIDDEN
+        assert response.status_code == status.HTTP_401_UNAUTHORIZED
