@@ -10,3 +10,11 @@ class Seller(BaseModel):
     description: str | None = Field(default=None, title="상점 설명", description="상점에 대한 설명")
 
     model_config = ConfigDict(from_attributes=True)
+
+    def update_info(self, store_name: str | None = None, description: str | None = None) -> None:
+        """판매자 정보를 수정합니다."""
+        if store_name is not None:
+            self.store_name = store_name
+
+        if description is not None:
+            self.description = description

@@ -10,6 +10,12 @@ class InvalidDomainException(DomainException):
     pass
 
 
+class PermissionDeniedException(DomainException):
+    """권한 부족 예외"""
+
+    pass
+
+
 class InsufficientStockException(DomainException):
     """재고 부족 예외"""
 

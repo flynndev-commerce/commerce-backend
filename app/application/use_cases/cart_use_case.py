@@ -6,7 +6,6 @@ from app.application.dto.cart_dto import (
 )
 from app.core.exceptions import (
     CartItemNotFoundException,
-    InsufficientStockException,
     ProductNotFoundException,
 )
 from app.domain.exceptions import InvalidDomainException
@@ -61,8 +60,7 @@ class CartUseCase:
             if not product:
                 raise ProductNotFoundException()
 
-            if product.stock < item_create.quantity:
-                raise InsufficientStockException()
+            product.check_stock(item_create.quantity)
 
             existing_item = await self.cart_repository.get_by_user_and_product(user_id, item_create.product_id)
 
@@ -95,8 +93,7 @@ class CartUseCase:
             if not product:
                 raise ProductNotFoundException()
 
-            if product.stock < item_update.quantity:
-                raise InsufficientStockException()
+            product.check_stock(item_update.quantity)
 
             # 도메인 메서드 사용
             try:

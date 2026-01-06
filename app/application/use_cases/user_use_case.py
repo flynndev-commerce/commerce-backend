@@ -68,15 +68,14 @@ class UserUseCase:
             # 비밀번호 업데이트가 있는 경우 도메인 메서드 사용
             password = update_data.pop("password", None)
 
-            # Pydantic copy로 기본 필드 업데이트
-            # 주의: model_copy는 얕은 복사이며 새 객체를 반환함
-            updated_user_obj = user_to_update.model_copy(update=update_data)
-
-            # 비밀번호 변경이 있다면 새 객체에 적용
+            # 비밀번호 변경
             if password:
-                updated_user_obj.set_password(password)
+                user_to_update.set_password(password)
 
-            updated_user = await self.user_repository.update(user=updated_user_obj)
+            # 기본 정보 변경
+            user_to_update.update_info(full_name=user_update.full_name)
+
+            updated_user = await self.user_repository.update(user=user_to_update)
             return UserRead.model_validate(updated_user)
 
     async def register_as_seller(self, user_id: int) -> UserRead:

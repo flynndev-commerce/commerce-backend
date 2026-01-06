@@ -8,7 +8,11 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from app.application.dto.response import BaseResponse
 from app.core.exceptions import CustomException, ExceptionCode
-from app.domain.exceptions import DomainException, InsufficientStockException
+from app.domain.exceptions import (
+    DomainException,
+    InsufficientStockException,
+    PermissionDeniedException,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -36,6 +40,9 @@ def configure_exception_handlers(app: FastAPI) -> None:
         if isinstance(exc, InsufficientStockException):
             status_code = status.HTTP_422_UNPROCESSABLE_ENTITY
             code = ExceptionCode.INSUFFICIENT_STOCK
+        elif isinstance(exc, PermissionDeniedException):
+            status_code = status.HTTP_403_FORBIDDEN
+            code = ExceptionCode.FORBIDDEN
 
         return JSONResponse(
             status_code=status_code,

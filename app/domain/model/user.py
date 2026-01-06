@@ -38,6 +38,11 @@ class User(BaseModel):
             self.role = UserRole.SELLER
         return self
 
+    def update_info(self, full_name: str | None = None) -> None:
+        """사용자 기본 정보를 수정합니다."""
+        if full_name is not None:
+            self.full_name = full_name
+
     def verify_password(self, password: str) -> bool:
         """비밀번호가 일치하는지 확인합니다."""
         return bcrypt.checkpw(password.encode("utf-8"), self.hashed_password.encode("utf-8"))

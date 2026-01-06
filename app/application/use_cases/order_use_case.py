@@ -4,7 +4,6 @@ from typing import Any
 from app.application.dto.order_dto import OrderCreate, OrderRead
 from app.core.exceptions import (
     EmptyCartException,
-    ForbiddenException,
     OrderNotFoundException,
     ProductNotFoundException,
 )
@@ -98,8 +97,7 @@ class OrderUseCase:
         if not order:
             raise OrderNotFoundException()
 
-        if order.user_id != user_id:
-            raise ForbiddenException(message="해당 주문에 대한 권한이 없습니다.")
+        order.verify_owner(user_id)
 
         return OrderRead.model_validate(order)
 
@@ -116,8 +114,7 @@ class OrderUseCase:
             if not order:
                 raise OrderNotFoundException()
 
-            if order.user_id != user_id:
-                raise ForbiddenException(message="해당 주문에 대한 권한이 없습니다.")
+            order.verify_owner(user_id)
 
             order.cancel()
 

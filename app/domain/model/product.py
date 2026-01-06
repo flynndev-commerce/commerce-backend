@@ -1,6 +1,10 @@
 from pydantic import BaseModel, ConfigDict, Field
 
-from app.domain.exceptions import InsufficientStockException, InvalidDomainException
+from app.domain.exceptions import (
+    InsufficientStockException,
+    InvalidDomainException,
+    PermissionDeniedException,
+)
 
 
 class Product(BaseModel):
@@ -20,10 +24,19 @@ class Product(BaseModel):
         if quantity <= 0:
             raise InvalidDomainException("차감할 수량은 0보다 커야 합니다.")
 
+        self.check_stock(quantity)
+
+        self.stock -= quantity
+
+    def check_stock(self, quantity: int) -> None:
+        """재고가 충분한지 확인합니다."""
         if self.stock < quantity:
             raise InsufficientStockException(f"재고가 부족합니다. (현재: {self.stock}, 요청: {quantity})")
 
-        self.stock -= quantity
+    def verify_owner(self, seller_id: int) -> None:
+        """상품의 소유자인지 확인합니다."""
+        if self.seller_id != seller_id:
+            raise PermissionDeniedException("해당 상품에 대한 권한이 없습니다.")
 
     def update_price(self, new_price: float) -> None:
         """가격을 변경합니다."""
@@ -36,3 +49,25 @@ class Product(BaseModel):
         if quantity <= 0:
             raise InvalidDomainException("추가할 수량은 0보다 커야 합니다.")
         self.stock += quantity
+
+    def update_details(
+        self,
+        name: str | None = None,
+        description: str | None = None,
+        price: float | None = None,
+        stock: int | None = None,
+    ) -> None:
+        """상품 정보를 수정합니다."""
+        if name is not None:
+            self.name = name
+
+        if description is not None:
+            self.description = description
+
+        if price is not None:
+            self.update_price(price)
+
+        if stock is not None:
+            if stock < 0:
+                raise InvalidDomainException("재고는 0보다 적을 수 없습니다.")
+            self.stock = stock

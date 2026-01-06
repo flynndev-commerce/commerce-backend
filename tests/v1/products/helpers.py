@@ -39,7 +39,7 @@ def create_test_seller(test_app: FastAPI, client: TestClient) -> dict[str, str]:
     return headers
 
 
-def create_test_product(
+def create_test_product(  # noqa: PLR0913
     test_app: FastAPI,
     client: TestClient,
     name: str = TEST_PRODUCT_NAME,

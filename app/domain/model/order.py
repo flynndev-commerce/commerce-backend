@@ -4,7 +4,7 @@ from typing import Annotated
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from app.domain.exceptions import InvalidDomainException
+from app.domain.exceptions import InvalidDomainException, PermissionDeniedException
 
 
 class OrderStatus(StrEnum):
@@ -38,6 +38,11 @@ class Order(BaseModel):
     items: Annotated[list[OrderItem], Field(title="주문 항목 목록")] = []
     created_at: Annotated[datetime, Field(title="생성 일시")] = Field(default_factory=datetime.now)
     updated_at: Annotated[datetime, Field(title="수정 일시")] = Field(default_factory=datetime.now)
+
+    def verify_owner(self, user_id: int) -> None:
+        """주문의 소유자인지 확인합니다."""
+        if self.user_id != user_id:
+            raise PermissionDeniedException("해당 주문에 대한 권한이 없습니다.")
 
     def cancel(self) -> None:
         """주문을 취소합니다."""
