@@ -1,6 +1,7 @@
 from collections.abc import Sequence
 
 from app.application.dto.product_dto import ProductCreate, ProductRead, ProductUpdate
+from app.core.decorators import retry_on_conflict
 from app.core.exceptions import (
     ProductNotFoundException,
 )
@@ -31,6 +32,7 @@ class ProductUseCase:
         products = await self.product_repository.list(offset=offset, limit=limit, seller_id=seller_id)
         return [ProductRead.model_validate(p) for p in products]
 
+    @retry_on_conflict()
     async def update_product(self, seller_id: int, product_id: int, product_update: ProductUpdate) -> ProductRead:
         async with self.uow:
             product = await self.product_repository.get_by_id(product_id=product_id)
