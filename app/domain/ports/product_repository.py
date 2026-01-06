@@ -18,8 +18,8 @@ class IProductRepository(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    async def list(self, offset: int, limit: int) -> Sequence[Product]:
-        """상품 목록을 조회합니다."""
+    async def list(self, offset: int, limit: int, seller_id: int | None = None) -> Sequence[Product]:
+        """상품 목록을 조회합니다. seller_id가 제공되면 해당 판매자의 상품만 조회합니다."""
         raise NotImplementedError
 
     @abstractmethod

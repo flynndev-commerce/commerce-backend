@@ -1,7 +1,7 @@
 from typing import Annotated
 
 from dependency_injector.wiring import Provide, inject
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, Query, status
 
 from app.application.dto.product_dto import (
     ProductCreate,
@@ -12,8 +12,8 @@ from app.application.dto.response import BaseResponse
 from app.application.use_cases.product_use_case import ProductUseCase
 from app.containers import Container
 from app.core.route_names import RouteName
-from app.core.security import get_current_user
-from app.domain.model.user import User, UserRole
+from app.core.security import get_current_seller
+from app.domain.model.seller import Seller
 
 router = APIRouter(prefix="/products", tags=["products"])
 
@@ -29,15 +29,11 @@ router = APIRouter(prefix="/products", tags=["products"])
 async def create_product(
     product_create: ProductCreate,
     product_use_case: Annotated[ProductUseCase, Depends(Provide[Container.product_use_case])],
-    current_user: Annotated[User, Depends(get_current_user)],
+    seller: Annotated[Seller, Depends(get_current_seller)],
 ) -> BaseResponse[ProductRead]:
-    if current_user.role != UserRole.SELLER:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="상품 등록 권한이 없습니다. 판매자로 등록해주세요.",
-        )
+    assert seller.id is not None
 
-    created_product = await product_use_case.create_product(product_create=product_create)
+    created_product = await product_use_case.create_product(seller_id=seller.id, product_create=product_create)
     return BaseResponse(result=created_product)
 
 
@@ -52,8 +48,9 @@ async def list_products(
     product_use_case: Annotated[ProductUseCase, Depends(Provide[Container.product_use_case])],
     offset: Annotated[int, Query(ge=0)] = 0,
     limit: Annotated[int, Query(ge=1, le=100)] = 10,
+    seller_id: Annotated[int | None, Query(title="판매자 ID 필터")] = None,
 ) -> BaseResponse[list[ProductRead]]:
-    products = await product_use_case.list_products(offset=offset, limit=limit)
+    products = await product_use_case.list_products(offset=offset, limit=limit, seller_id=seller_id)
     return BaseResponse(result=list(products))
 
 
@@ -83,6 +80,11 @@ async def update_product(
     product_id: int,
     product_update: ProductUpdate,
     product_use_case: Annotated[ProductUseCase, Depends(Provide[Container.product_use_case])],
+    seller: Annotated[Seller, Depends(get_current_seller)],
 ) -> BaseResponse[ProductRead]:
-    updated_product = await product_use_case.update_product(product_id=product_id, product_update=product_update)
+    assert seller.id is not None
+
+    updated_product = await product_use_case.update_product(
+        seller_id=seller.id, product_id=product_id, product_update=product_update
+    )
     return BaseResponse(result=updated_product)

@@ -18,6 +18,7 @@ class ProductCreate(ProductBase):
 
 class ProductRead(ProductBase):
     id: Annotated[int, Field(title="고유 ID")]
+    seller_id: Annotated[int, Field(title="판매자 ID")]
 
 
 class ProductUpdate(CamelCaseBaseModel):

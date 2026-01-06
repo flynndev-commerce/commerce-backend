@@ -1,7 +1,7 @@
 from collections.abc import Sequence
 
 from app.application.dto.product_dto import ProductCreate, ProductRead, ProductUpdate
-from app.core.exceptions import ProductNotFoundException
+from app.core.exceptions import ForbiddenException, ProductNotFoundException
 from app.domain.model.product import Product
 from app.domain.ports.product_repository import IProductRepository
 from app.domain.ports.unit_of_work import IUnitOfWork
@@ -12,9 +12,10 @@ class ProductUseCase:
         self.product_repository = product_repository
         self.uow = uow
 
-    async def create_product(self, product_create: ProductCreate) -> ProductRead:
+    async def create_product(self, seller_id: int, product_create: ProductCreate) -> ProductRead:
         async with self.uow:
-            product_to_create = Product.model_validate(product_create)
+            product_data = product_create.model_dump()
+            product_to_create = Product(**product_data, seller_id=seller_id)
             created_product = await self.product_repository.create(product=product_to_create)
             return ProductRead.model_validate(created_product)
 
@@ -24,15 +25,20 @@ class ProductUseCase:
             raise ProductNotFoundException()
         return ProductRead.model_validate(product)
 
-    async def list_products(self, offset: int, limit: int) -> Sequence[ProductRead]:
-        products = await self.product_repository.list(offset=offset, limit=limit)
+    async def list_products(self, offset: int, limit: int, seller_id: int | None = None) -> Sequence[ProductRead]:
+        products = await self.product_repository.list(offset=offset, limit=limit, seller_id=seller_id)
         return [ProductRead.model_validate(p) for p in products]
 
-    async def update_product(self, product_id: int, product_update: ProductUpdate) -> ProductRead:
+    async def update_product(
+        self, seller_id: int, product_id: int, product_update: ProductUpdate
+    ) -> ProductRead:
         async with self.uow:
             product_to_update = await self.product_repository.get_by_id(product_id=product_id)
             if not product_to_update:
                 raise ProductNotFoundException()
+
+            if product_to_update.seller_id != seller_id:
+                raise ForbiddenException(message="해당 상품에 대한 권한이 없습니다.")
 
             update_data = product_update.model_dump(exclude_unset=True)
             updated_product_obj = product_to_update.model_copy(update=update_data)

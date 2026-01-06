@@ -27,8 +27,12 @@ class SQLProductRepository(IProductRepository):
             return Product.model_validate(db_product)
         return None
 
-    async def list(self, offset: int, limit: int) -> Sequence[Product]:
-        statement = select(ProductEntity).offset(offset).limit(limit)
+    async def list(self, offset: int, limit: int, seller_id: int | None = None) -> Sequence[Product]:
+        statement = select(ProductEntity)
+        if seller_id is not None:
+            statement = statement.where(ProductEntity.seller_id == seller_id)
+        
+        statement = statement.offset(offset).limit(limit)
         result = await self.session.exec(statement)
         db_products = result.all()
         return [Product.model_validate(p) for p in db_products]

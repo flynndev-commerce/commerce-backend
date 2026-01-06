@@ -9,7 +9,9 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from app.application.dto.token import TokenPayload
 from app.core.config import get_settings
-from app.domain.model.user import User
+from app.core.exceptions import ForbiddenException
+from app.domain.model.seller import Seller
+from app.domain.model.user import User, UserRole
 from app.domain.ports.user_repository import IUserRepository
 
 settings = get_settings()
@@ -94,3 +96,18 @@ async def get_current_user(
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Inactive user")
 
     return user
+
+async def get_current_seller(
+    current_user: Annotated[User, Depends(get_current_user)],
+) -> Seller:
+    """
+    현재 인증된 사용자가 판매자인 경우 판매자 정보를 반환합니다.
+    """
+    if current_user.role != UserRole.SELLER or not current_user.seller:
+        raise ForbiddenException(message="판매자 권한이 필요합니다.")
+    
+    if current_user.seller.id is None:
+        # DB 무결성 상 발생하지 않아야 함
+        raise ForbiddenException(message="유효하지 않은 판매자 정보입니다.")
+
+    return current_user.seller

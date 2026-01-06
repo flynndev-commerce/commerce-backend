@@ -9,6 +9,7 @@ class Product(BaseModel):
     description: str | None = Field(default=None, title="상품 설명", description="상품에 대한 상세 설명")
     price: float = Field(gt=0, title="가격", description="상품의 가격. 0보다 커야 합니다.")
     stock: int = Field(ge=0, title="재고 수량", description="남아있는 상품의 수량. 0 이상이어야 합니다.")
+    seller_id: int = Field(title="판매자 ID", description="상품을 등록한 판매자의 고유 ID")
 
     class Config:
         from_attributes = True
