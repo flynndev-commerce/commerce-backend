@@ -4,6 +4,8 @@ from typing import Annotated
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from app.domain.exceptions import InvalidDomainException
+
 
 class OrderStatus(StrEnum):
     PENDING = "PENDING"
@@ -36,3 +38,9 @@ class Order(BaseModel):
     items: Annotated[list[OrderItem], Field(title="주문 항목 목록")] = []
     created_at: Annotated[datetime, Field(title="생성 일시")] = Field(default_factory=datetime.now)
     updated_at: Annotated[datetime, Field(title="수정 일시")] = Field(default_factory=datetime.now)
+
+    def cancel(self) -> None:
+        """주문을 취소합니다."""
+        if self.status not in [OrderStatus.PENDING, OrderStatus.PAID]:
+            raise InvalidDomainException("이미 배송이 시작되었거나 취소된 주문은 취소할 수 없습니다.")
+        self.status = OrderStatus.CANCELLED

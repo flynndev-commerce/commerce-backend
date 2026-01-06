@@ -8,6 +8,7 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from app.application.dto.response import BaseResponse
 from app.core.exceptions import CustomException, ExceptionCode
+from app.domain.exceptions import DomainException, InsufficientStockException
 
 logger = logging.getLogger(__name__)
 
@@ -22,6 +23,26 @@ def configure_exception_handlers(app: FastAPI) -> None:
                 code=exc.code,
                 message=exc.message,
                 result=exc.data,
+            ).model_dump(by_alias=True),
+        )
+
+    @app.exception_handler(DomainException)
+    async def domain_exception_handler(request: Request, exc: DomainException) -> JSONResponse:
+        logger.error(f"DomainException: {str(exc)}", exc_info=True)
+
+        status_code = status.HTTP_400_BAD_REQUEST
+        code = ExceptionCode.BAD_REQUEST
+
+        if isinstance(exc, InsufficientStockException):
+            status_code = status.HTTP_422_UNPROCESSABLE_ENTITY
+            code = ExceptionCode.INSUFFICIENT_STOCK
+
+        return JSONResponse(
+            status_code=status_code,
+            content=BaseResponse[Any](
+                code=code,
+                message=str(exc),
+                result=None,
             ).model_dump(by_alias=True),
         )
 

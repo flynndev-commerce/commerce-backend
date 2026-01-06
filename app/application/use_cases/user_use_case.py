@@ -8,7 +8,7 @@ from app.core.exceptions import (
     UserInactiveException,
     UserNotFoundException,
 )
-from app.domain.model.user import User, UserRole
+from app.domain.model.user import User
 from app.domain.ports.unit_of_work import IUnitOfWork
 from app.domain.ports.user_repository import IUserRepository
 
@@ -24,26 +24,25 @@ class UserUseCase:
             if existing_user:
                 raise EmailAlreadyExistsException()
 
-            hashed_password = security.get_password_hash(user_create.password)
-
-            # 도메인 모델 생성
+            # 도메인 모델 생성 및 비밀번호 설정
+            # Pydantic 모델이라 필드가 필수이므로 임시 값으로 생성 후 설정
             user_to_create = User(
                 email=user_create.email,
                 full_name=user_create.full_name,
-                hashed_password=hashed_password,
-                is_active=True,  # 기본값
+                hashed_password="temp",  # set_password로 덮어씌워짐
+                is_active=True,
             )
+            user_to_create.set_password(user_create.password)
 
             created_user = await self.user_repository.create(user=user_to_create)
 
-            # 응답 DTO로 변환하여 반환
             return UserRead.model_validate(created_user)
 
     async def login_user(self, email: str, password: str) -> str:
         user = await self.user_repository.get_by_email(email=email)
 
-        # 도메인 모델의 메서드를 사용하여 비밀번호 확인
-        if not user or not user.check_password(password):
+        # 도메인 메서드 사용
+        if not user or not user.verify_password(password):
             raise InvalidCredentialsException()
 
         if not user.is_active:
@@ -66,15 +65,16 @@ class UserUseCase:
 
             update_data = user_update.model_dump(exclude_unset=True)
 
-            if "password" in update_data and update_data["password"]:
-                hashed_password = security.get_password_hash(update_data["password"])
-                update_data["hashed_password"] = hashed_password
+            # 비밀번호 업데이트가 있는 경우 도메인 메서드 사용
+            password = update_data.pop("password", None)
 
-            # 비밀번호 필드는 업데이트 데이터에서 제거 (hashed_password로 대체됨)
-            update_data.pop("password", None)
-
-            # 기존 사용자 객체의 복사본을 만들고 업데이트된 데이터 적용
+            # Pydantic copy로 기본 필드 업데이트
+            # 주의: model_copy는 얕은 복사이며 새 객체를 반환함
             updated_user_obj = user_to_update.model_copy(update=update_data)
+
+            # 비밀번호 변경이 있다면 새 객체에 적용
+            if password:
+                updated_user_obj.set_password(password)
 
             updated_user = await self.user_repository.update(user=updated_user_obj)
             return UserRead.model_validate(updated_user)
@@ -86,9 +86,9 @@ class UserUseCase:
             if not user:
                 raise UserNotFoundException()
 
-            if user.role == UserRole.SELLER:
+            if user.is_seller:
                 raise SellerAlreadyExistsException()
 
-            user.role = UserRole.SELLER
+            user.promote_to_seller()
             updated_user = await self.user_repository.update(user=user)
             return UserRead.model_validate(updated_user)

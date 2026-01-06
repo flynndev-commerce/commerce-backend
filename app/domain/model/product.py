@@ -1,4 +1,6 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
+
+from app.domain.exceptions import InsufficientStockException, InvalidDomainException
 
 
 class Product(BaseModel):
@@ -11,5 +13,26 @@ class Product(BaseModel):
     stock: int = Field(ge=0, title="재고 수량", description="남아있는 상품의 수량. 0 이상이어야 합니다.")
     seller_id: int = Field(title="판매자 ID", description="상품을 등록한 판매자의 고유 ID")
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
+
+    def decrease_stock(self, quantity: int) -> None:
+        """재고를 차감합니다."""
+        if quantity <= 0:
+            raise InvalidDomainException("차감할 수량은 0보다 커야 합니다.")
+
+        if self.stock < quantity:
+            raise InsufficientStockException(f"재고가 부족합니다. (현재: {self.stock}, 요청: {quantity})")
+
+        self.stock -= quantity
+
+    def update_price(self, new_price: float) -> None:
+        """가격을 변경합니다."""
+        if new_price <= 0:
+            raise InvalidDomainException("가격은 0보다 커야 합니다.")
+        self.price = new_price
+
+    def add_stock(self, quantity: int) -> None:
+        """재고를 추가합니다."""
+        if quantity <= 0:
+            raise InvalidDomainException("추가할 수량은 0보다 커야 합니다.")
+        self.stock += quantity

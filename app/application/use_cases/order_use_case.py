@@ -3,14 +3,12 @@ from typing import Any
 
 from app.application.dto.order_dto import OrderCreate, OrderRead
 from app.core.exceptions import (
-    BadRequestException,
     EmptyCartException,
     ForbiddenException,
-    InsufficientStockException,
     OrderNotFoundException,
     ProductNotFoundException,
 )
-from app.domain.model.order import Order, OrderItem, OrderStatus
+from app.domain.model.order import Order, OrderItem
 from app.domain.ports.cart_repository import ICartRepository
 from app.domain.ports.order_repository import IOrderRepository
 from app.domain.ports.product_repository import IProductRepository
@@ -45,10 +43,8 @@ class OrderUseCase:
             if not product:
                 raise ProductNotFoundException(message=f"상품을 찾을 수 없습니다. (ID: {item.product_id})")
 
-            if product.stock < item.quantity:
-                raise InsufficientStockException(
-                    message=f"재고가 부족합니다. (상품: {product.name}, 재고: {product.stock}, 요청: {item.quantity})"
-                )
+            # 도메인 메서드 호출로 변경
+            product.decrease_stock(item.quantity)
 
             # 가격 계산 및 아이템 생성
             item_price = product.price * item.quantity
@@ -62,8 +58,7 @@ class OrderUseCase:
                 )
             )
 
-            # 재고 차감
-            product.stock -= item.quantity
+            # 재고 업데이트
             await self.product_repository.update(product)
 
         # 주문 생성
@@ -124,18 +119,15 @@ class OrderUseCase:
             if order.user_id != user_id:
                 raise ForbiddenException(message="해당 주문에 대한 권한이 없습니다.")
 
-            if order.status not in [OrderStatus.PENDING, OrderStatus.PAID]:
-                raise BadRequestException(message="이미 배송이 시작되었거나 취소된 주문은 취소할 수 없습니다.")
+            order.cancel()
 
             # 재고 복구
             for item in order.items:
                 product = await self.product_repository.get_by_id(item.product_id)
                 if product:
-                    product.stock += item.quantity
+                    product.add_stock(item.quantity)
                     await self.product_repository.update(product)
 
-            # 상태 변경
-            order.status = OrderStatus.CANCELLED
             updated_order = await self.order_repository.save(order)
 
             return OrderRead.model_validate(updated_order)

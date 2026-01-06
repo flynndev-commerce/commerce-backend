@@ -9,6 +9,7 @@ from app.core.exceptions import (
     InsufficientStockException,
     ProductNotFoundException,
 )
+from app.domain.exceptions import InvalidDomainException
 from app.domain.model.cart import CartItem
 from app.domain.ports.cart_repository import ICartRepository
 from app.domain.ports.product_repository import IProductRepository
@@ -66,7 +67,12 @@ class CartUseCase:
             existing_item = await self.cart_repository.get_by_user_and_product(user_id, item_create.product_id)
 
             if existing_item:
-                existing_item.quantity += item_create.quantity
+                # 도메인 메서드 사용
+                try:
+                    existing_item.add_quantity(item_create.quantity)
+                except InvalidDomainException:
+                    pass  # 0 이하 추가는 DTO validation에서 막히므로 여기서는 무시 가능하거나 에러 처리
+
                 await self.cart_repository.save(existing_item)
             else:
                 new_item = CartItem(
@@ -92,7 +98,13 @@ class CartUseCase:
             if product.stock < item_update.quantity:
                 raise InsufficientStockException()
 
-            item.quantity = item_update.quantity
+            # 도메인 메서드 사용
+            try:
+                item.update_quantity(item_update.quantity)
+            except InvalidDomainException:
+                # DTO Validation이 먼저 처리되겠지만, 안전장치
+                pass
+
             await self.cart_repository.save(item)
 
         return await self.get_cart(user_id)

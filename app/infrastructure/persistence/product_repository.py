@@ -31,7 +31,7 @@ class SQLProductRepository(IProductRepository):
         statement = select(ProductEntity)
         if seller_id is not None:
             statement = statement.where(ProductEntity.seller_id == seller_id)
-        
+
         statement = statement.offset(offset).limit(limit)
         result = await self.session.exec(statement)
         db_products = result.all()

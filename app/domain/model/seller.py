@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class Seller(BaseModel):
@@ -9,5 +9,4 @@ class Seller(BaseModel):
     store_name: str = Field(title="상점명", description="판매자의 상점 이름")
     description: str | None = Field(default=None, title="상점 설명", description="상점에 대한 설명")
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
