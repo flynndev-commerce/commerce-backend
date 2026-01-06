@@ -20,19 +20,25 @@ class SQLSellerRepository(ISellerRepository):
             return Seller.model_validate(entity)
         return None
 
-    async def save(self, seller: Seller) -> Seller:
+    async def create(self, user_id: int, store_name: str, description: str | None = None) -> Seller:
+        entity = SellerEntity(
+            user_id=user_id,
+            store_name=store_name,
+            description=description,
+        )
+        self.session.add(entity)
+        await self.session.flush()
+        await self.session.refresh(entity)
+        return Seller.model_validate(entity)
+
+    async def update(self, seller: Seller) -> Seller:
         entity = SellerEntity(
             id=seller.id,
             user_id=seller.user_id,
             store_name=seller.store_name,
             description=seller.description,
         )
-
-        if entity.id:
-            entity = await self.session.merge(entity)
-        else:
-            self.session.add(entity)
-
+        entity = await self.session.merge(entity)
         await self.session.flush()
         await self.session.refresh(entity)
         return Seller.model_validate(entity)

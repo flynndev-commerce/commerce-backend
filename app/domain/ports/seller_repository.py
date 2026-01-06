@@ -12,6 +12,11 @@ class ISellerRepository(ABC):
         pass
 
     @abstractmethod
-    async def save(self, seller: Seller) -> Seller:
-        """판매자 정보를 저장하거나 업데이트합니다."""
+    async def create(self, user_id: int, store_name: str, description: str | None = None) -> Seller:
+        """새로운 판매자를 생성합니다."""
+        pass
+
+    @abstractmethod
+    async def update(self, seller: Seller) -> Seller:
+        """판매자 정보를 업데이트합니다."""
         pass

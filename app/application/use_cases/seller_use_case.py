@@ -1,6 +1,5 @@
 from app.application.dto.seller_dto import SellerCreate, SellerRead
 from app.core.exceptions import SellerAlreadyExistsException, UserNotFoundException
-from app.domain.model.seller import Seller
 from app.domain.model.user import UserRole
 from app.domain.ports.seller_repository import ISellerRepository
 from app.domain.ports.unit_of_work import IUnitOfWork
@@ -32,12 +31,11 @@ class SellerUseCase:
                 raise SellerAlreadyExistsException()
 
             # 3. 판매자 정보 생성
-            seller = Seller(
+            saved_seller = await self.seller_repository.create(
                 user_id=user_id,
                 store_name=seller_create.store_name,
                 description=seller_create.description,
             )
-            saved_seller = await self.seller_repository.save(seller)
 
             # 4. 사용자 역할 업데이트 (선택 사항: UserRole을 유지한다면)
             if user.role != UserRole.SELLER:

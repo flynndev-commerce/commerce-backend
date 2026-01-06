@@ -3,6 +3,7 @@ from typing import TYPE_CHECKING, Annotated, ClassVar
 from sqlmodel import Field, Relationship, SQLModel
 
 if TYPE_CHECKING:
+    from app.infrastructure.persistence.models.product_entity import ProductEntity
     from app.infrastructure.persistence.models.user_entity import UserEntity
 
 
@@ -17,7 +18,7 @@ class SellerEntity(SQLModel, table=True):
             title="고유 ID",
             description="판매자의 고유 식별자",
         ),
-    ]
+    ] = None
     user_id: Annotated[
         int,
         Field(
@@ -44,6 +45,7 @@ class SellerEntity(SQLModel, table=True):
             title="상점 설명",
             description="상점에 대한 설명",
         ),
-    ]
+    ] = None
 
     user: "UserEntity" = Relationship(back_populates="seller")
+    products: list["ProductEntity"] = Relationship(back_populates="seller")
