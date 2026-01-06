@@ -13,7 +13,7 @@ class CartItemEntity(SQLModel, table=True):
     id: Annotated[
         int | None,
         Field(default=None, primary_key=True, title="고유 ID"),
-    ]
+    ] = None
     user_id: Annotated[
         int,
         Field(foreign_key="user.id", index=True, title="사용자 ID"),

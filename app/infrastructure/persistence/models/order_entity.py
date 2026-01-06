@@ -12,7 +12,7 @@ class OrderEntity(SQLModel, table=True):
     id: Annotated[
         int | None,
         Field(default=None, primary_key=True, title="고유 ID"),
-    ]
+    ] = None
     user_id: Annotated[
         int,
         Field(foreign_key="user.id", index=True, title="주문자 ID"),
@@ -20,7 +20,7 @@ class OrderEntity(SQLModel, table=True):
     status: Annotated[
         OrderStatus,
         Field(default=OrderStatus.PENDING, title="주문 상태"),
-    ]
+    ] = OrderStatus.PENDING
     total_price: Annotated[
         float,
         Field(ge=0, title="총 주문 금액"),
@@ -43,7 +43,7 @@ class OrderItemEntity(SQLModel, table=True):
     id: Annotated[
         int | None,
         Field(default=None, primary_key=True, title="고유 ID"),
-    ]
+    ] = None
     order_id: Annotated[
         int | None,
         Field(foreign_key="order.id", index=True, title="주문 ID"),
