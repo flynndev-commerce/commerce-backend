@@ -9,6 +9,7 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 from app.application.dto.response import BaseResponse
 from app.core.exceptions import CustomException, ExceptionCode
 from app.domain.exceptions import (
+    ConcurrentModificationException,
     DomainException,
     InsufficientStockException,
     PermissionDeniedException,
@@ -43,6 +44,10 @@ def configure_exception_handlers(app: FastAPI) -> None:
         elif isinstance(exc, PermissionDeniedException):
             status_code = status.HTTP_403_FORBIDDEN
             code = ExceptionCode.FORBIDDEN
+
+        if isinstance(exc, ConcurrentModificationException):
+            status_code = status.HTTP_409_CONFLICT
+            code = ExceptionCode.CONCURRENT_MODIFICATION
 
         return JSONResponse(
             status_code=status_code,
