@@ -147,10 +147,18 @@ app/
 ### 모델링
 
 -   **Domain Model (`app/domain/model/`)**: 순수한 비즈니스 도메인을 표현하며, 데이터베이스나 외부 기술에 대한 의존성이 없습니다. (예: `User`, `Product`)
+    -   **Pydantic V2 문법 준수**: `class Config` 대신 `model_config = ConfigDict(from_attributes=True)` 사용.
+    -   **비즈니스 로직 캡슐화**: 유즈케이스가 아닌 도메인 모델 메서드 내에 핵심 로직 구현 (예: `decrease_stock()`, `set_password()`).
+    -   **순수 도메인 예외**: 도메인 메서드는 `app/core/exceptions.py`의 HTTP 예외 대신, `app/domain/exceptions.py`의 순수 도메인 예외(`InvalidDomainException` 등)를 발생.
     ```python
-    class User(BaseModel):
-        id: int | None = Field(default=None, ...)
-        email: EmailStr = Field(...)
+    class Product(BaseModel):
+        model_config = ConfigDict(from_attributes=True)
+        # ... 필드 정의 ...
+        
+        def decrease_stock(self, quantity: int) -> None:
+             if self.stock < quantity:
+                  raise InsufficientStockException(...)
+             self.stock -= quantity
     ```
 -   **Persistence Model (`app/infrastructure/persistence/model/`)**: DB 테이블과 1:1 매핑, 클래스명에 `Entity` 접미사 (예: `UserEntity`, `ProductEntity`). `SQLModel` 상속.
     ```python
@@ -193,6 +201,7 @@ app/
 -   **예외 처리**: `HTTPException` 발생 시 전역 핸들러(`app/core/exception_handlers.py`)가 자동 처리
 -   **의존성 주입**: `Annotated[UseCase, Depends(Provide[Container.use_case])]` 패턴 (예: `Annotated[UserUseCase, Depends(Provide[Container.user_use_case])]`)
 -   **API 문서 요약 (Summary)**: 각 API 엔드포인트의 `APIRouter` 데코레이터에 `summary` 파라미터를 사용하여 간결하고 명확한 한글 요약 설명을 추가합니다.
+-   **예외 처리 전략**: `app/application/use_cases/`는 도메인 예외를 잡지 않고 전파(Populate)하거나, 애플리케이션 특화 예외로 변환합니다. 최종적인 HTTP 상태 코드 매핑은 `app/core/exception_handlers.py`에서 담당합니다.
 
 ### 코드 스타일
 
@@ -200,6 +209,8 @@ app/
 -   **모던 문법**: `X | None` (not `Optional[X]`), `list` (not `List`), PEP 695 제네릭
 -   **Self 참조**: `typing_extensions.Self` 사용
 -   **Line length**: 120자
+-   **불필요한 주석 지양**: 코드로 의도가 명확한 경우 주석 생략.
+-   **Explicit Role Check**: `if user.role == UserRole.SELLER` 대신 도메인 프로퍼티 `if user.is_seller` 사용.
 
 ### 커밋 메시지
 
