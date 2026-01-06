@@ -1,13 +1,18 @@
 from datetime import datetime
-from typing import Annotated, ClassVar
+from typing import Annotated, Any, ClassVar
 
+from sqlalchemy import Column, Integer
 from sqlmodel import Field, Relationship, SQLModel
 
 from app.domain.model.order import OrderStatus
 
+# Define explicit column for versioning to satisfy SQLAlchemy mapper args
+version_col = Column("version", Integer, default=1, nullable=False)
+
 
 class OrderEntity(SQLModel, table=True):
     __tablename__: ClassVar[str] = "order"
+    __mapper_args__: ClassVar[dict[str, Any]] = {"version_id_col": version_col}
 
     id: Annotated[
         int | None,
@@ -33,6 +38,7 @@ class OrderEntity(SQLModel, table=True):
         datetime,
         Field(default_factory=datetime.now, title="수정 일시"),
     ]
+    version: int | None = Field(default=1, sa_column=version_col)
 
     items: list["OrderItemEntity"] = Relationship(back_populates="order", sa_relationship_kwargs={"lazy": "selectin"})
 

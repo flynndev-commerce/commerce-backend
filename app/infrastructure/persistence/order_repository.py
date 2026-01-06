@@ -1,7 +1,9 @@
 from sqlalchemy.orm import selectinload
+from sqlalchemy.orm.exc import StaleDataError
 from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
+from app.domain.exceptions import ConcurrentModificationException
 from app.domain.model.order import Order, OrderItem
 from app.domain.ports.order_repository import IOrderRepository
 from app.infrastructure.persistence.models.order_entity import OrderEntity, OrderItemEntity
@@ -22,6 +24,7 @@ class SQLOrderRepository(IOrderRepository):
             total_price=order.total_price,
             created_at=order.created_at,
             updated_at=order.updated_at,
+            version=order.version,
         )
 
         # OrderItem 도메인 모델 -> OrderItemEntity 변환
@@ -37,12 +40,18 @@ class SQLOrderRepository(IOrderRepository):
         order_entity.items = order_item_entities
 
         if order.id:
-            order_entity = await self.session.merge(order_entity)
+            try:
+                order_entity = await self.session.merge(order_entity)
+                await self.session.flush()
+                await self.session.refresh(order_entity)
+            except StaleDataError as e:
+                raise ConcurrentModificationException(
+                    f"Order has been modified by another transaction. (id={order.id})"
+                ) from e
         else:
             self.session.add(order_entity)
-
-        await self.session.flush()
-        await self.session.refresh(order_entity)
+            await self.session.flush()
+            await self.session.refresh(order_entity)
 
         return self._to_domain(order_entity)
 

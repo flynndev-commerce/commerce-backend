@@ -20,3 +20,9 @@ class InsufficientStockException(DomainException):
     """재고 부족 예외"""
 
     pass
+
+
+class ConcurrentModificationException(DomainException):
+    """동시 수정 예외 (낙관적 락 충돌)"""
+
+    pass

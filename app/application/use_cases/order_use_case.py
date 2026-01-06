@@ -2,6 +2,7 @@ from collections.abc import Sequence
 from typing import Any
 
 from app.application.dto.order_dto import OrderCreate, OrderRead
+from app.core.decorators import retry_on_conflict
 from app.core.exceptions import (
     EmptyCartException,
     OrderNotFoundException,
@@ -69,6 +70,7 @@ class OrderUseCase:
 
         return await self.order_repository.save(order)
 
+    @retry_on_conflict()
     async def create_order(self, user_id: int, order_create: OrderCreate) -> OrderRead:
         """
         주문을 생성합니다.
@@ -101,6 +103,7 @@ class OrderUseCase:
 
         return OrderRead.model_validate(order)
 
+    @retry_on_conflict()
     async def cancel_order(self, user_id: int, order_id: int) -> OrderRead:
         """
         주문을 취소합니다.
@@ -129,6 +132,7 @@ class OrderUseCase:
 
             return OrderRead.model_validate(updated_order)
 
+    @retry_on_conflict()
     async def create_order_from_cart(self, user_id: int) -> OrderRead:
         """
         장바구니에 있는 모든 상품을 주문합니다.
