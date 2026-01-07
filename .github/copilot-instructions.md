@@ -57,10 +57,10 @@ app/
   class RouteName(StrEnum):
       USERS_CREATE_USER = "users:create-user"
       USERS_LOGIN = "users:login"
-  
+
   # 라우터에서 사용
   @router.post("", name=RouteName.USERS_CREATE_USER)
-  
+
   # 테스트에서 사용
   url = test_app.url_path_for(RouteName.USERS_CREATE_USER)
   ```
@@ -154,7 +154,7 @@ app/
     class Product(BaseModel):
         model_config = ConfigDict(from_attributes=True)
         # ... 필드 정의 ...
-        
+
         def decrease_stock(self, quantity: int) -> None:
              if self.stock < quantity:
                   raise InsufficientStockException(...)
@@ -190,10 +190,10 @@ app/
     class RouteName(StrEnum):
         USERS_CREATE_USER = "users:create-user"
         USERS_LOGIN = "users:login"
-    
+
     # 라우터에서 사용
     @router.post("", name=RouteName.USERS_CREATE_USER)
-    
+
     # 테스트에서 사용
     url = test_app.url_path_for(RouteName.USERS_CREATE_USER)
     ```
@@ -286,7 +286,7 @@ poetry run ruff check app --fix && poetry run black app
     ```python
     # ✅ 올바른 예시
     url = test_app.url_path_for(RouteName.USERS_CREATE_USER)
-    
+
     # ❌ 잘못된 예시
     url = "/api/v1/users"  # 하드코딩 금지
     ```
@@ -297,7 +297,7 @@ poetry run ruff check app --fix && poetry run black app
     response_model = BaseResponse[UserRead].model_validate(response.json())
     assert response_model.code == "OK"
     assert response_model.result.email == "test@example.com"
-    
+
     # ❌ 잘못된 예시
     data = response.json()
     assert data["code"] == "OK"  # dict 직접 접근
@@ -364,7 +364,7 @@ poetry run pytest tests/v1/test_users.py::TestUserCreate::test_create_user_succe
    ```python
    # ✅ 올바른 예시
    url = test_app.url_path_for(RouteName.USERS_CREATE_USER)
-   
+
    # ❌ 잘못된 예시
    url = "/api/v1/users"  # 하드코딩 금지
    ```
@@ -375,7 +375,7 @@ poetry run pytest tests/v1/test_users.py::TestUserCreate::test_create_user_succe
    response_model = BaseResponse[UserRead].model_validate(response.json())
    assert response_model.code == "OK"
    assert response_model.result.email == "test@example.com"
-   
+
    # ❌ 잘못된 예시
    data = response.json()
    assert data["code"] == "OK"  # dict 직접 접근
