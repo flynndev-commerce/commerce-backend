@@ -71,6 +71,8 @@
 -   **Formatter**: `black`
 -   **Type Checker**: `mypy` (`strict` 모드 활성화)
     -   **`py.typed` 파일**: MyPy가 패키지를 타입 힌트가 있는 것으로 인식하도록 각 파이썬 패키지 디렉토리(`app/domain`, `app/application` 등)에 비어있는 `py.typed` 파일을 포함합니다.
+-   **Pre-commit**: 커밋 시 자동으로 Linter와 Formatter를 실행합니다.
+    -   설치 명령어: `poetry run pre-commit install`
 -   **Line Length**: 120자
 
 모든 코드는 다음 명령을 실행하여 검사를 통과해야 합니다:
