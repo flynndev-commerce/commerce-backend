@@ -1,5 +1,5 @@
+import httpx
 from fastapi import FastAPI
-from fastapi.testclient import TestClient
 
 from app.application.dto.order_dto import OrderRead
 from app.application.dto.response import BaseResponse
@@ -13,14 +13,14 @@ TEST_ORDER_QUANTITY_EXCESS = 1000
 TEST_ORDER_ID_NONEXISTENT = 99999
 
 
-def create_test_order(test_app: FastAPI, client: TestClient) -> OrderRead:
+async def create_test_order(test_app: FastAPI, client: httpx.AsyncClient) -> OrderRead:
     """테스트용 주문을 생성하고 OrderRead 모델을 반환하는 헬퍼 함수"""
     # 사용자 및 상품 생성
-    create_test_user(test_app, client)
-    product = create_test_product(test_app, client)
-    token = login_and_get_token(test_app, client)
+    await create_test_user(test_app, client)
+    product = await create_test_product(test_app, client)
+    token = await login_and_get_token(test_app, client)
 
-    response = client.post(
+    response = await client.post(
         test_app.url_path_for(RouteName.ORDERS_CREATE),
         headers={"Authorization": f"Bearer {token}"},
         json={

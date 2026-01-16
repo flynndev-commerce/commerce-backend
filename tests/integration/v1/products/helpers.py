@@ -1,5 +1,5 @@
+import httpx
 from fastapi import FastAPI
-from fastapi.testclient import TestClient
 
 from app.application.dto.product_dto import ProductRead
 from app.application.dto.response import BaseResponse
@@ -20,15 +20,15 @@ TEST_PRODUCT_PRICE_UPDATED = 20000.0
 TEST_PRODUCT_ID_NONEXISTENT = 99999
 
 
-def create_test_seller(test_app: FastAPI, client: TestClient) -> dict[str, str]:
+async def create_test_seller(test_app: FastAPI, client: httpx.AsyncClient) -> dict[str, str]:
     """테스트용 판매자를 생성하고 인증 헤더를 반환합니다."""
     # 판매자 생성 및 로그인
-    create_test_user(test_app, client, email=TEST_SELLER_EMAIL, password=TEST_SELLER_PASSWORD)
-    token = login_and_get_token(test_app, client, email=TEST_SELLER_EMAIL, password=TEST_SELLER_PASSWORD)
+    await create_test_user(test_app, client, email=TEST_SELLER_EMAIL, password=TEST_SELLER_PASSWORD)
+    token = await login_and_get_token(test_app, client, email=TEST_SELLER_EMAIL, password=TEST_SELLER_PASSWORD)
     headers = {"Authorization": f"Bearer {token}"}
 
     # 판매자 등록 (이미 등록된 경우 무시)
-    client.post(
+    await client.post(
         test_app.url_path_for(RouteName.USERS_REGISTER_SELLER),
         headers=headers,
         json={
@@ -39,18 +39,18 @@ def create_test_seller(test_app: FastAPI, client: TestClient) -> dict[str, str]:
     return headers
 
 
-def create_test_product(  # noqa: PLR0913
+async def create_test_product(  # noqa: PLR0913
     test_app: FastAPI,
-    client: TestClient,
+    client: httpx.AsyncClient,
     name: str = TEST_PRODUCT_NAME,
     description: str = TEST_PRODUCT_DESCRIPTION,
     price: float = TEST_PRODUCT_PRICE,
     stock: int = TEST_PRODUCT_STOCK,
 ) -> ProductRead:
     """테스트용 상품을 생성하고 ProductRead 모델을 반환하는 헬퍼 함수"""
-    headers = create_test_seller(test_app, client)
+    headers = await create_test_seller(test_app, client)
 
-    response = client.post(
+    response = await client.post(
         test_app.url_path_for(RouteName.PRODUCTS_CREATE),
         headers=headers,
         json={
