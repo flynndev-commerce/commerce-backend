@@ -8,14 +8,19 @@ from app.application.dto.response import BaseResponse
 from app.core.route_names import RouteName
 from tests.integration.v1.carts.helpers import TEST_CART_ITEM_QUANTITY, TEST_CART_ITEM_QUANTITY_EXCESSIVE
 from tests.integration.v1.products.helpers import create_test_product
-from tests.integration.v1.users.helpers import create_test_user, login_and_get_token
+from tests.integration.v1.users.helpers import login_and_get_token
 
 
 @pytest.mark.asyncio
 class TestAddItem:
-    async def test_add_item_to_cart(self, test_app: FastAPI, client: httpx.AsyncClient) -> None:
-        # Given
-        await create_test_user(test_app, client)
+    async def test_add_item_to_cart(
+        self,
+        test_app: FastAPI,
+        client: httpx.AsyncClient,
+        test_customer_account: dict[str, object],
+        test_seller_account: dict[str, object],
+    ) -> None:
+        # Given: 공통 고객/판매자 fixture 사용
         token = await login_and_get_token(test_app, client)
         headers = {"Authorization": f"Bearer {token}"}
         product = await create_test_product(test_app, client)
@@ -38,9 +43,14 @@ class TestAddItem:
         assert response_model.result.items[0].quantity == TEST_CART_ITEM_QUANTITY
         assert response_model.result.total_price == product.price * TEST_CART_ITEM_QUANTITY
 
-    async def test_add_item_insufficient_stock(self, test_app: FastAPI, client: httpx.AsyncClient) -> None:
-        # Given
-        await create_test_user(test_app, client)
+    async def test_add_item_insufficient_stock(
+        self,
+        test_app: FastAPI,
+        client: httpx.AsyncClient,
+        test_customer_account: dict[str, object],
+        test_seller_account: dict[str, object],
+    ) -> None:
+        # Given: 공통 고객/판매자 fixture 사용
         token = await login_and_get_token(test_app, client)
         headers = {"Authorization": f"Bearer {token}"}
         product = await create_test_product(test_app, client)

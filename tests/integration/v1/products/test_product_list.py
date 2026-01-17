@@ -34,17 +34,16 @@ class TestProductList:
         assert response_model.code == "OK"
         assert len(response_model.result) == 0
 
-    async def test_list_products_with_data(self, test_app: FastAPI, client: httpx.AsyncClient) -> None:
-        """데이터가 있는 상품 목록 조회 테스트"""
+    async def test_list_products_with_data(
+        self,
+        test_app: FastAPI,
+        client: httpx.AsyncClient,
+        test_seller_account: dict[str, object],
+    ) -> None:
+        """데이터가 있는 상품 목록 조회 테스트 (공통 판매자 fixture 사용)"""
         # 상품 2개 생성
         await create_test_product(test_app, client)
-
-        # 두 번째 상품 생성을 위해 헤더 필요 (create_test_product 내부에서 이미 판매자 생성됨)
-        # 하지만 create_test_product는 매번 새로운 판매자를 생성하려고 시도할 수 있음 (helpers 구현에 따라)
-        # helpers.py의 create_test_seller는 이미 존재하면 로그인만 함.
-        # 따라서 create_test_seller를 호출하여 헤더를 얻어옴.
         headers = await create_test_seller(test_app, client)
-
         await client.post(
             test_app.url_path_for(RouteName.PRODUCTS_CREATE),
             headers=headers,
@@ -55,7 +54,6 @@ class TestProductList:
                 "stock": TEST_PRODUCT_STOCK,
             },
         )
-
         response = await client.get(test_app.url_path_for(RouteName.PRODUCTS_LIST))
 
         assert response.status_code == status.HTTP_200_OK
