@@ -1,5 +1,6 @@
+import httpx
+import pytest
 from fastapi import FastAPI
-from fastapi.testclient import TestClient
 from starlette import status
 
 from app.application.dto.cart_dto import CartRead
@@ -13,16 +14,17 @@ from tests.integration.v1.products.helpers import create_test_product
 from tests.integration.v1.users.helpers import create_test_user, login_and_get_token
 
 
+@pytest.mark.asyncio
 class TestUpdateItem:
-    def test_update_cart_item_quantity(self, test_app: FastAPI, client: TestClient) -> None:
+    async def test_update_cart_item_quantity(self, test_app: FastAPI, client: httpx.AsyncClient) -> None:
         # Given
-        create_test_user(test_app, client)
-        token = login_and_get_token(test_app, client)
+        await create_test_user(test_app, client)
+        token = await login_and_get_token(test_app, client)
         headers = {"Authorization": f"Bearer {token}"}
-        product = create_test_product(test_app, client)
+        product = await create_test_product(test_app, client)
 
         # Add item first
-        client.post(
+        await client.post(
             test_app.url_path_for(RouteName.CARTS_ADD_ITEM),
             headers=headers,
             json={
@@ -32,7 +34,7 @@ class TestUpdateItem:
         )
 
         # When
-        response = client.patch(
+        response = await client.patch(
             test_app.url_path_for(RouteName.CARTS_UPDATE_ITEM, product_id=product.id),
             headers=headers,
             json={

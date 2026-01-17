@@ -1,5 +1,6 @@
+import httpx
+import pytest
 from fastapi import FastAPI
-from fastapi.testclient import TestClient
 from starlette import status
 
 from app.application.dto.product_dto import ProductRead
@@ -16,14 +17,20 @@ from tests.integration.v1.products.helpers import (
 )
 
 
+@pytest.mark.asyncio
 class TestProductCreate:
     """상품 생성 테스트"""
 
-    def test_create_product_success(self, test_app: FastAPI, client: TestClient) -> None:
-        """상품 생성 성공 테스트"""
-        headers = create_test_seller(test_app, client)
+    async def test_create_product_success(
+        self,
+        test_app: FastAPI,
+        client: httpx.AsyncClient,
+        test_seller_account: dict[str, object],
+    ) -> None:
+        """상품 생성 성공 테스트 (공통 판매자 fixture 사용)"""
+        headers = await create_test_seller(test_app, client)
 
-        response = client.post(
+        response = await client.post(
             test_app.url_path_for(RouteName.PRODUCTS_CREATE),
             headers=headers,
             json={
@@ -44,11 +51,16 @@ class TestProductCreate:
         assert response_model.result.stock == TEST_PRODUCT_STOCK
         assert response_model.result.id is not None
 
-    def test_create_product_invalid_price(self, test_app: FastAPI, client: TestClient) -> None:
-        """유효하지 않은 가격으로 상품 생성 실패 테스트"""
-        headers = create_test_seller(test_app, client)
+    async def test_create_product_invalid_price(
+        self,
+        test_app: FastAPI,
+        client: httpx.AsyncClient,
+        test_seller_account: dict[str, object],
+    ) -> None:
+        """유효하지 않은 가격으로 상품 생성 실패 테스트 (공통 판매자 fixture 사용)"""
+        headers = await create_test_seller(test_app, client)
 
-        response = client.post(
+        response = await client.post(
             test_app.url_path_for(RouteName.PRODUCTS_CREATE),
             headers=headers,
             json={
@@ -60,11 +72,16 @@ class TestProductCreate:
 
         assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
 
-    def test_create_product_invalid_stock(self, test_app: FastAPI, client: TestClient) -> None:
-        """유효하지 않은 재고로 상품 생성 실패 테스트"""
-        headers = create_test_seller(test_app, client)
+    async def test_create_product_invalid_stock(
+        self,
+        test_app: FastAPI,
+        client: httpx.AsyncClient,
+        test_seller_account: dict[str, object],
+    ) -> None:
+        """유효하지 않은 재고로 상품 생성 실패 테스트 (공통 판매자 fixture 사용)"""
+        headers = await create_test_seller(test_app, client)
 
-        response = client.post(
+        response = await client.post(
             test_app.url_path_for(RouteName.PRODUCTS_CREATE),
             headers=headers,
             json={

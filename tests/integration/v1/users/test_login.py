@@ -1,5 +1,6 @@
+import httpx
+import pytest
 from fastapi import FastAPI
-from fastapi.testclient import TestClient
 from starlette import status
 
 from app.application.dto.response import BaseResponse
@@ -14,16 +15,17 @@ from tests.integration.v1.users.helpers import (
 )
 
 
+@pytest.mark.asyncio
 class TestUserLogin:
     """사용자 로그인 테스트"""
 
-    def test_login_success(self, test_app: FastAPI, client: TestClient) -> None:
+    async def test_login_success(self, test_app: FastAPI, client: httpx.AsyncClient) -> None:
         """로그인 성공 테스트"""
         # 사용자 생성
-        create_test_user(test_app, client)
+        await create_test_user(test_app, client)
 
         # 로그인
-        response = client.post(
+        response = await client.post(
             test_app.url_path_for(RouteName.USERS_LOGIN),
             json={
                 "email": TEST_USER_EMAIL,
@@ -40,13 +42,13 @@ class TestUserLogin:
         assert len(response_model.result.access_token) > 0
         assert response_model.result.token_type == "bearer"
 
-    def test_login_wrong_password(self, test_app: FastAPI, client: TestClient) -> None:
+    async def test_login_wrong_password(self, test_app: FastAPI, client: httpx.AsyncClient) -> None:
         """잘못된 비밀번호로 로그인 실패 테스트"""
         # 사용자 생성
-        create_test_user(test_app, client)
+        await create_test_user(test_app, client)
 
         # 잘못된 비밀번호로 로그인 시도
-        response = client.post(
+        response = await client.post(
             test_app.url_path_for(RouteName.USERS_LOGIN),
             json={
                 "email": TEST_USER_EMAIL,
@@ -60,9 +62,9 @@ class TestUserLogin:
         assert response_model.message is not None
         assert "이메일 또는 비밀번호가 올바르지 않습니다." in response_model.message
 
-    def test_login_nonexistent_user(self, test_app: FastAPI, client: TestClient) -> None:
+    async def test_login_nonexistent_user(self, test_app: FastAPI, client: httpx.AsyncClient) -> None:
         """존재하지 않는 사용자로 로그인 실패 테스트"""
-        response = client.post(
+        response = await client.post(
             test_app.url_path_for(RouteName.USERS_LOGIN),
             json={
                 "email": TEST_USER_EMAIL_NONEXISTENT,

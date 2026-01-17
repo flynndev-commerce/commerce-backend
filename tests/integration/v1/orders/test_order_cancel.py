@@ -1,5 +1,6 @@
+import httpx
+import pytest
 from fastapi import FastAPI
-from fastapi.testclient import TestClient
 from starlette import status
 
 from app.application.dto.order_dto import OrderRead
@@ -12,17 +13,18 @@ from tests.integration.v1.products.helpers import TEST_PRODUCT_STOCK
 from tests.integration.v1.users.helpers import login_and_get_token
 
 
+@pytest.mark.asyncio
 class TestOrderCancel:
     """주문 취소 테스트"""
 
-    def test_cancel_order_success(self, test_app: FastAPI, client: TestClient) -> None:
+    async def test_cancel_order_success(self, test_app: FastAPI, client: httpx.AsyncClient) -> None:
         """주문 취소 성공 테스트 (상태 변경 및 재고 복구 확인)"""
-        order = create_test_order(test_app, client)
-        token = login_and_get_token(test_app, client)
+        order = await create_test_order(test_app, client)
+        token = await login_and_get_token(test_app, client)
         product_id = order.items[0].product_id
 
         # 주문 취소 요청
-        response = client.post(
+        response = await client.post(
             test_app.url_path_for(RouteName.ORDERS_CANCEL, order_id=order.id),
             headers={"Authorization": f"Bearer {token}"},
         )
@@ -33,31 +35,31 @@ class TestOrderCancel:
         assert response_model.result.status == OrderStatus.CANCELLED
 
         # 재고 복구 확인
-        product_response = client.get(
+        product_response = await client.get(
             test_app.url_path_for(RouteName.PRODUCTS_GET, product_id=product_id),
         )
         product_model = BaseResponse[ProductRead].model_validate(product_response.json())
         # 초기 재고로 복구되었는지 확인
         assert product_model.result.stock == TEST_PRODUCT_STOCK
 
-    def test_cancel_order_not_found(self, test_app: FastAPI, client: TestClient) -> None:
+    async def test_cancel_order_not_found(self, test_app: FastAPI, client: httpx.AsyncClient) -> None:
         """존재하지 않는 주문 취소 실패 테스트"""
-        create_test_order(test_app, client)
-        token = login_and_get_token(test_app, client)
+        await create_test_order(test_app, client)
+        token = await login_and_get_token(test_app, client)
 
-        response = client.post(
+        response = await client.post(
             test_app.url_path_for(RouteName.ORDERS_CANCEL, order_id=TEST_ORDER_ID_NONEXISTENT),
             headers={"Authorization": f"Bearer {token}"},
         )
 
         assert response.status_code == status.HTTP_404_NOT_FOUND
 
-    def test_cancel_order_forbidden(self, test_app: FastAPI, client: TestClient) -> None:
+    async def test_cancel_order_forbidden(self, test_app: FastAPI, client: httpx.AsyncClient) -> None:
         """다른 사용자의 주문 취소 실패 테스트"""
-        order = create_test_order(test_app, client)
+        order = await create_test_order(test_app, client)
 
         # 다른 사용자 로그인
-        client.post(
+        await client.post(
             test_app.url_path_for(RouteName.USERS_CREATE_USER),
             json={
                 "email": "other@example.com",
@@ -65,7 +67,7 @@ class TestOrderCancel:
                 "fullName": "Other User",
             },
         )
-        login_response = client.post(
+        login_response = await client.post(
             test_app.url_path_for(RouteName.USERS_LOGIN),
             json={
                 "email": "other@example.com",
@@ -74,26 +76,26 @@ class TestOrderCancel:
         )
         token = login_response.json()["result"]["accessToken"]
 
-        response = client.post(
+        response = await client.post(
             test_app.url_path_for(RouteName.ORDERS_CANCEL, order_id=order.id),
             headers={"Authorization": f"Bearer {token}"},
         )
 
         assert response.status_code == status.HTTP_403_FORBIDDEN
 
-    def test_cancel_order_invalid_status(self, test_app: FastAPI, client: TestClient) -> None:
+    async def test_cancel_order_invalid_status(self, test_app: FastAPI, client: httpx.AsyncClient) -> None:
         """이미 취소된 주문 취소 실패 테스트"""
-        order = create_test_order(test_app, client)
-        token = login_and_get_token(test_app, client)
+        order = await create_test_order(test_app, client)
+        token = await login_and_get_token(test_app, client)
 
         # 1차 취소 (성공)
-        client.post(
+        await client.post(
             test_app.url_path_for(RouteName.ORDERS_CANCEL, order_id=order.id),
             headers={"Authorization": f"Bearer {token}"},
         )
 
         # 2차 취소 (실패)
-        response = client.post(
+        response = await client.post(
             test_app.url_path_for(RouteName.ORDERS_CANCEL, order_id=order.id),
             headers={"Authorization": f"Bearer {token}"},
         )

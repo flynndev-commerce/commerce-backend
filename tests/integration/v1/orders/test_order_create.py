@@ -1,5 +1,6 @@
+import httpx
+import pytest
 from fastapi import FastAPI
-from fastapi.testclient import TestClient
 from starlette import status
 
 from app.application.dto.order_dto import OrderRead
@@ -12,17 +13,18 @@ from tests.integration.v1.products.helpers import TEST_PRODUCT_ID_NONEXISTENT, T
 from tests.integration.v1.users.helpers import create_test_user, login_and_get_token
 
 
+@pytest.mark.asyncio
 class TestOrderCreate:
     """주문 생성 테스트"""
 
-    def test_create_order_success(self, test_app: FastAPI, client: TestClient) -> None:
+    async def test_create_order_success(self, test_app: FastAPI, client: httpx.AsyncClient) -> None:
         """주문 생성 성공 테스트"""
         # 사용자 및 상품 생성
-        create_test_user(test_app, client)
-        product = create_test_product(test_app, client)
-        token = login_and_get_token(test_app, client)
+        await create_test_user(test_app, client)
+        product = await create_test_product(test_app, client)
+        token = await login_and_get_token(test_app, client)
 
-        response = client.post(
+        response = await client.post(
             test_app.url_path_for(RouteName.ORDERS_CREATE),
             headers={"Authorization": f"Bearer {token}"},
             json={
@@ -45,12 +47,12 @@ class TestOrderCreate:
         assert response_model.result.items[0].product_id == product.id
         assert response_model.result.items[0].quantity == TEST_ORDER_QUANTITY
 
-    def test_create_order_product_not_found(self, test_app: FastAPI, client: TestClient) -> None:
+    async def test_create_order_product_not_found(self, test_app: FastAPI, client: httpx.AsyncClient) -> None:
         """존재하지 않는 상품으로 주문 생성 실패 테스트"""
-        create_test_user(test_app, client)
-        token = login_and_get_token(test_app, client)
+        await create_test_user(test_app, client)
+        token = await login_and_get_token(test_app, client)
 
-        response = client.post(
+        response = await client.post(
             test_app.url_path_for(RouteName.ORDERS_CREATE),
             headers={"Authorization": f"Bearer {token}"},
             json={
@@ -65,13 +67,13 @@ class TestOrderCreate:
 
         assert response.status_code == status.HTTP_404_NOT_FOUND
 
-    def test_create_order_insufficient_stock(self, test_app: FastAPI, client: TestClient) -> None:
+    async def test_create_order_insufficient_stock(self, test_app: FastAPI, client: httpx.AsyncClient) -> None:
         """재고 부족으로 주문 생성 실패 테스트"""
-        create_test_user(test_app, client)
-        product = create_test_product(test_app, client)
-        token = login_and_get_token(test_app, client)
+        await create_test_user(test_app, client)
+        product = await create_test_product(test_app, client)
+        token = await login_and_get_token(test_app, client)
 
-        response = client.post(
+        response = await client.post(
             test_app.url_path_for(RouteName.ORDERS_CREATE),
             headers={"Authorization": f"Bearer {token}"},
             json={
@@ -86,16 +88,16 @@ class TestOrderCreate:
 
         assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
 
-    def test_create_order_removes_items_from_cart(self, test_app: FastAPI, client: TestClient) -> None:
+    async def test_create_order_removes_items_from_cart(self, test_app: FastAPI, client: httpx.AsyncClient) -> None:
         """주문 생성 시 장바구니에 해당 상품이 있다면 제거되는지 테스트"""
         # Given
-        create_test_user(test_app, client)
-        token = login_and_get_token(test_app, client)
+        await create_test_user(test_app, client)
+        token = await login_and_get_token(test_app, client)
         headers = {"Authorization": f"Bearer {token}"}
-        product = create_test_product(test_app, client)
+        product = await create_test_product(test_app, client)
 
         # 1. 장바구니에 상품 담기
-        client.post(
+        await client.post(
             test_app.url_path_for(RouteName.CARTS_ADD_ITEM),
             headers=headers,
             json={
@@ -106,7 +108,7 @@ class TestOrderCreate:
 
         # When
         # 2. 해당 상품 직접 주문
-        response = client.post(
+        response = await client.post(
             test_app.url_path_for(RouteName.ORDERS_CREATE),
             headers=headers,
             json={
@@ -123,7 +125,7 @@ class TestOrderCreate:
         assert response.status_code == status.HTTP_201_CREATED
 
         # 3. 장바구니 확인 (비어있어야 함)
-        cart_response = client.get(
+        cart_response = await client.get(
             test_app.url_path_for(RouteName.CARTS_GET_MY_CART),
             headers=headers,
         )
@@ -131,23 +133,27 @@ class TestOrderCreate:
         cart_data = cart_response.json()
         assert len(cart_data["result"]["items"]) == 0
 
-    def test_create_order_removes_only_ordered_items_from_cart(self, test_app: FastAPI, client: TestClient) -> None:
+    async def test_create_order_removes_only_ordered_items_from_cart(
+        self,
+        test_app: FastAPI,
+        client: httpx.AsyncClient,
+    ) -> None:
         """주문 생성 시 주문한 상품만 장바구니에서 제거되고 나머지는 유지되는지 테스트"""
         # Given
-        create_test_user(test_app, client)
-        token = login_and_get_token(test_app, client)
+        await create_test_user(test_app, client)
+        token = await login_and_get_token(test_app, client)
         headers = {"Authorization": f"Bearer {token}"}
 
-        product1 = create_test_product(test_app, client, name="Product 1", price=1000)
-        product2 = create_test_product(test_app, client, name="Product 2", price=2000)
+        product1 = await create_test_product(test_app, client, name="Product 1", price=1000)
+        product2 = await create_test_product(test_app, client, name="Product 2", price=2000)
 
         # 1. 장바구니에 두 상품 담기
-        client.post(
+        await client.post(
             test_app.url_path_for(RouteName.CARTS_ADD_ITEM),
             headers=headers,
             json={"productId": product1.id, "quantity": 1},
         )
-        client.post(
+        await client.post(
             test_app.url_path_for(RouteName.CARTS_ADD_ITEM),
             headers=headers,
             json={"productId": product2.id, "quantity": 1},
@@ -155,7 +161,7 @@ class TestOrderCreate:
 
         # When
         # 2. Product 1만 직접 주문
-        response = client.post(
+        response = await client.post(
             test_app.url_path_for(RouteName.ORDERS_CREATE),
             headers=headers,
             json={
@@ -172,7 +178,7 @@ class TestOrderCreate:
         assert response.status_code == status.HTTP_201_CREATED
 
         # 3. 장바구니 확인 (Product 2만 남아있어야 함)
-        cart_response = client.get(
+        cart_response = await client.get(
             test_app.url_path_for(RouteName.CARTS_GET_MY_CART),
             headers=headers,
         )

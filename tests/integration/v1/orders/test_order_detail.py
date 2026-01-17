@@ -1,5 +1,6 @@
+import httpx
+import pytest
 from fastapi import FastAPI
-from fastapi.testclient import TestClient
 from starlette import status
 
 from app.application.dto.order_dto import OrderRead
@@ -9,15 +10,16 @@ from tests.integration.v1.orders.helpers import TEST_ORDER_ID_NONEXISTENT, creat
 from tests.integration.v1.users.helpers import login_and_get_token
 
 
+@pytest.mark.asyncio
 class TestOrderDetail:
     """주문 상세 조회 테스트"""
 
-    def test_get_order_success(self, test_app: FastAPI, client: TestClient) -> None:
+    async def test_get_order_success(self, test_app: FastAPI, client: httpx.AsyncClient) -> None:
         """주문 상세 조회 성공 테스트"""
-        order = create_test_order(test_app, client)
-        token = login_and_get_token(test_app, client)
+        order = await create_test_order(test_app, client)
+        token = await login_and_get_token(test_app, client)
 
-        response = client.get(
+        response = await client.get(
             test_app.url_path_for(RouteName.ORDERS_GET, order_id=order.id),
             headers={"Authorization": f"Bearer {token}"},
         )
@@ -28,25 +30,25 @@ class TestOrderDetail:
         assert response_model.result.id == order.id
         assert response_model.result.total_price == order.total_price
 
-    def test_get_order_not_found(self, test_app: FastAPI, client: TestClient) -> None:
+    async def test_get_order_not_found(self, test_app: FastAPI, client: httpx.AsyncClient) -> None:
         """존재하지 않는 주문 조회 실패 테스트"""
-        create_test_order(test_app, client)
-        token = login_and_get_token(test_app, client)
+        await create_test_order(test_app, client)
+        token = await login_and_get_token(test_app, client)
 
-        response = client.get(
+        response = await client.get(
             test_app.url_path_for(RouteName.ORDERS_GET, order_id=TEST_ORDER_ID_NONEXISTENT),
             headers={"Authorization": f"Bearer {token}"},
         )
 
         assert response.status_code == status.HTTP_404_NOT_FOUND
 
-    def test_get_order_forbidden(self, test_app: FastAPI, client: TestClient) -> None:
+    async def test_get_order_forbidden(self, test_app: FastAPI, client: httpx.AsyncClient) -> None:
         """다른 사용자의 주문 조회 실패 테스트"""
         # 사용자 A가 주문 생성
-        order = create_test_order(test_app, client)
+        order = await create_test_order(test_app, client)
 
         # 사용자 B 생성 및 로그인
-        client.post(
+        await client.post(
             test_app.url_path_for(RouteName.USERS_CREATE_USER),
             json={
                 "email": "userb@example.com",
@@ -54,7 +56,7 @@ class TestOrderDetail:
                 "fullName": "User B",
             },
         )
-        login_response = client.post(
+        login_response = await client.post(
             test_app.url_path_for(RouteName.USERS_LOGIN),
             json={
                 "email": "userb@example.com",
@@ -64,7 +66,7 @@ class TestOrderDetail:
         token_b = login_response.json()["result"]["accessToken"]
 
         # 사용자 B가 사용자 A의 주문 조회 시도
-        response = client.get(
+        response = await client.get(
             test_app.url_path_for(RouteName.ORDERS_GET, order_id=order.id),
             headers={"Authorization": f"Bearer {token_b}"},
         )

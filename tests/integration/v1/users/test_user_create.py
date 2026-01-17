@@ -1,5 +1,6 @@
+import httpx
+import pytest
 from fastapi import FastAPI
-from fastapi.testclient import TestClient
 from starlette import status
 
 from app.application.dto.response import BaseResponse
@@ -17,12 +18,13 @@ from tests.integration.v1.users.helpers import (
 )
 
 
+@pytest.mark.asyncio
 class TestUserCreate:
     """사용자 생성 테스트"""
 
-    def test_create_user_success(self, test_app: FastAPI, client: TestClient) -> None:
+    async def test_create_user_success(self, test_app: FastAPI, client: httpx.AsyncClient) -> None:
         """사용자 생성 성공 테스트"""
-        response = client.post(
+        response = await client.post(
             test_app.url_path_for(RouteName.USERS_CREATE_USER),
             json={
                 "email": TEST_USER_EMAIL,
@@ -41,13 +43,13 @@ class TestUserCreate:
         assert response_model.result.is_active is True
         assert response_model.result.id is not None
 
-    def test_create_user_duplicate_email(self, test_app: FastAPI, client: TestClient) -> None:
+    async def test_create_user_duplicate_email(self, test_app: FastAPI, client: httpx.AsyncClient) -> None:
         """중복 이메일로 사용자 생성 실패 테스트"""
         # 첫 번째 사용자 생성
-        create_test_user(test_app, client)
+        await create_test_user(test_app, client)
 
         # 같은 이메일로 두 번째 사용자 생성 시도
-        response = client.post(
+        response = await client.post(
             test_app.url_path_for(RouteName.USERS_CREATE_USER),
             json={
                 "email": TEST_USER_EMAIL,
@@ -64,9 +66,9 @@ class TestUserCreate:
         assert response_model.message is not None
         assert "이미 존재하는 이메일입니다." in response_model.message
 
-    def test_create_user_invalid_email(self, test_app: FastAPI, client: TestClient) -> None:
+    async def test_create_user_invalid_email(self, test_app: FastAPI, client: httpx.AsyncClient) -> None:
         """잘못된 이메일 형식으로 사용자 생성 실패 테스트"""
-        response = client.post(
+        response = await client.post(
             test_app.url_path_for(RouteName.USERS_CREATE_USER),
             json={
                 "email": TEST_USER_INVALID_EMAIL,
@@ -77,9 +79,9 @@ class TestUserCreate:
 
         assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
 
-    def test_create_user_short_password(self, test_app: FastAPI, client: TestClient) -> None:
+    async def test_create_user_short_password(self, test_app: FastAPI, client: httpx.AsyncClient) -> None:
         """짧은 비밀번호로 사용자 생성 실패 테스트"""
-        response = client.post(
+        response = await client.post(
             test_app.url_path_for(RouteName.USERS_CREATE_USER),
             json={
                 "email": TEST_USER_EMAIL,

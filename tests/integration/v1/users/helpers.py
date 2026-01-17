@@ -1,5 +1,5 @@
+import httpx
 from fastapi import FastAPI
-from fastapi.testclient import TestClient
 from starlette import status
 
 from app.application.dto.response import BaseResponse
@@ -22,14 +22,14 @@ TEST_USER_PASSWORD_NEW = "newpassword456"
 TEST_USER_FULL_NAME_HACKER = "Hacker"
 
 
-def create_test_user(
+async def create_test_user(
     test_app: FastAPI,
-    client: TestClient,
+    client: httpx.AsyncClient,
     email: str = TEST_USER_EMAIL,
     password: str = TEST_USER_PASSWORD,
 ) -> UserRead:
     """테스트용 사용자를 생성하고 UserRead 모델을 반환하는 헬퍼 함수"""
-    response = client.post(
+    response = await client.post(
         test_app.url_path_for(RouteName.USERS_CREATE_USER),
         json={
             "email": email,
@@ -40,7 +40,7 @@ def create_test_user(
 
     # 이미 존재하는 경우 로그인으로 정보 가져오기
     if response.status_code == status.HTTP_400_BAD_REQUEST:
-        login_response = client.post(
+        login_response = await client.post(
             test_app.url_path_for(RouteName.USERS_LOGIN),
             json={
                 "email": email,
@@ -49,7 +49,7 @@ def create_test_user(
         )
         # 로그인 성공 후 현재 사용자 정보 조회
         token = BaseResponse[Token].model_validate(login_response.json()).result.access_token
-        user_response = client.get(
+        user_response = await client.get(
             test_app.url_path_for(RouteName.USERS_GET_CURRENT_USER),
             headers={"Authorization": f"Bearer {token}"},
         )
@@ -59,14 +59,14 @@ def create_test_user(
     return response_model.result
 
 
-def login_and_get_token(
+async def login_and_get_token(
     test_app: FastAPI,
-    client: TestClient,
+    client: httpx.AsyncClient,
     email: str = TEST_USER_EMAIL,
     password: str = TEST_USER_PASSWORD,
 ) -> str:
     """로그인하여 토큰을 반환하는 헬퍼 함수"""
-    response = client.post(
+    response = await client.post(
         test_app.url_path_for(RouteName.USERS_LOGIN),
         json={
             "email": email,

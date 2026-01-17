@@ -1,5 +1,6 @@
+import httpx
+import pytest
 from fastapi import FastAPI
-from fastapi.testclient import TestClient
 from starlette import status
 
 from app.application.dto.cart_dto import CartRead
@@ -8,15 +9,16 @@ from app.core.route_names import RouteName
 from tests.integration.v1.users.helpers import create_test_user, login_and_get_token
 
 
+@pytest.mark.asyncio
 class TestGetCart:
-    def test_get_empty_cart(self, test_app: FastAPI, client: TestClient) -> None:
+    async def test_get_empty_cart(self, test_app: FastAPI, client: httpx.AsyncClient) -> None:
         # Given
-        create_test_user(test_app, client)
-        token = login_and_get_token(test_app, client)
+        await create_test_user(test_app, client)
+        token = await login_and_get_token(test_app, client)
         headers = {"Authorization": f"Bearer {token}"}
 
         # When
-        response = client.get(
+        response = await client.get(
             test_app.url_path_for(RouteName.CARTS_GET_MY_CART),
             headers=headers,
         )

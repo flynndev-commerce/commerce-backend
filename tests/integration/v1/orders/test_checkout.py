@@ -1,5 +1,6 @@
+import httpx
+import pytest
 from fastapi import FastAPI
-from fastapi.testclient import TestClient
 from starlette import status
 
 from app.application.dto.order_dto import OrderRead
@@ -10,16 +11,17 @@ from tests.integration.v1.products.helpers import create_test_product
 from tests.integration.v1.users.helpers import create_test_user, login_and_get_token
 
 
+@pytest.mark.asyncio
 class TestCheckout:
-    def test_checkout_success(self, test_app: FastAPI, client: TestClient) -> None:
+    async def test_checkout_success(self, test_app: FastAPI, client: httpx.AsyncClient) -> None:
         # Given
-        create_test_user(test_app, client)
-        token = login_and_get_token(test_app, client)
+        await create_test_user(test_app, client)
+        token = await login_and_get_token(test_app, client)
         headers = {"Authorization": f"Bearer {token}"}
-        product = create_test_product(test_app, client)
+        product = await create_test_product(test_app, client)
 
         # 장바구니에 상품 추가
-        client.post(
+        await client.post(
             test_app.url_path_for(RouteName.CARTS_ADD_ITEM),
             headers=headers,
             json={
@@ -29,7 +31,7 @@ class TestCheckout:
         )
 
         # When
-        response = client.post(
+        response = await client.post(
             test_app.url_path_for(RouteName.ORDERS_CHECKOUT),
             headers=headers,
         )
@@ -43,20 +45,20 @@ class TestCheckout:
         assert response_model.result.total_price == product.price * TEST_CART_ITEM_QUANTITY
 
         # 장바구니가 비어있는지 확인
-        cart_response = client.get(
+        cart_response = await client.get(
             test_app.url_path_for(RouteName.CARTS_GET_MY_CART),
             headers=headers,
         )
         assert cart_response.json()["result"]["items"] == []
 
-    def test_checkout_empty_cart(self, test_app: FastAPI, client: TestClient) -> None:
+    async def test_checkout_empty_cart(self, test_app: FastAPI, client: httpx.AsyncClient) -> None:
         # Given
-        create_test_user(test_app, client)
-        token = login_and_get_token(test_app, client)
+        await create_test_user(test_app, client)
+        token = await login_and_get_token(test_app, client)
         headers = {"Authorization": f"Bearer {token}"}
 
         # When
-        response = client.post(
+        response = await client.post(
             test_app.url_path_for(RouteName.ORDERS_CHECKOUT),
             headers=headers,
         )
@@ -64,15 +66,15 @@ class TestCheckout:
         # Then
         assert response.status_code == status.HTTP_400_BAD_REQUEST
 
-    def test_checkout_insufficient_stock(self, test_app: FastAPI, client: TestClient) -> None:
+    async def test_checkout_insufficient_stock(self, test_app: FastAPI, client: httpx.AsyncClient) -> None:
         # Given
-        create_test_user(test_app, client)
-        token = login_and_get_token(test_app, client)
+        await create_test_user(test_app, client)
+        token = await login_and_get_token(test_app, client)
         headers = {"Authorization": f"Bearer {token}"}
-        product = create_test_product(test_app, client)
+        product = await create_test_product(test_app, client)
 
         # 장바구니에 상품 추가
-        client.post(
+        await client.post(
             test_app.url_path_for(RouteName.CARTS_ADD_ITEM),
             headers=headers,
             json={
