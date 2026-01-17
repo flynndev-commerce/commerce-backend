@@ -133,7 +133,11 @@ class TestOrderCreate:
         cart_data = cart_response.json()
         assert len(cart_data["result"]["items"]) == 0
 
-    async def test_create_order_removes_only_ordered_items_from_cart(self, test_app: FastAPI, client: httpx.AsyncClient) -> None:
+    async def test_create_order_removes_only_ordered_items_from_cart(
+        self,
+        test_app: FastAPI,
+        client: httpx.AsyncClient,
+    ) -> None:
         """주문 생성 시 주문한 상품만 장바구니에서 제거되고 나머지는 유지되는지 테스트"""
         # Given
         await create_test_user(test_app, client)
